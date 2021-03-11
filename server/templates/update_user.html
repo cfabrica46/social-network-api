@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta lang="en">
+        <title>Update User</title>
+    </head>
+    <body>  
+        <div align="center">
+            <h1>Introduce Los Nuevos Datos</h1>    
+        </div>
+        <h3>Procura no dejar alguna casilla sin responder</h3>
+        <form method="POST" action="/user/update">
+            USERNAME: <input type="text" name="username"><br><br>
+            PASSWORD: <input type="password" name="password"><br><br>
+                      <input type="submit" value="SUBMIT"><br>
+                      <input type="hidden" name="id" value="{{.}}">
+        </form>
+    </body>
+</html>
