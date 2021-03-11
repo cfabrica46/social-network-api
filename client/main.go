@@ -274,4 +274,30 @@ func updateUserPost(u user) {
 
 func deleteUser() {
 
+	var id string
+
+	fmt.Println("Escribe el ID del usuario que deseas eleminar")
+	fmt.Print("> ")
+	fmt.Scan(&id)
+
+	s := fmt.Sprintf("http://192.168.1.2:8080/user/delete?id=%s", id)
+
+	res, err := http.Get(s)
+
+	if err != nil {
+		fmt.Println(http.StatusText(http.StatusNotFound))
+		return
+	}
+
+	defer res.Body.Close()
+
+	body, err := ioutil.ReadAll(res.Body)
+
+	if err != nil {
+		fmt.Println(http.StatusText(http.StatusInternalServerError))
+		return
+	}
+
+	fmt.Printf("%s\n", body)
+
 }
