@@ -51,13 +51,13 @@ func main() {
 
 		case 4:
 
-			updateUserGet()
+			u := updateUserGet()
+
+			updateUserPost(u)
 
 		case 5:
 
-			u := createUserGet()
-
-			createUserPost(u)
+			deleteUser()
 
 		default:
 
@@ -194,11 +194,12 @@ func createUserPost(u user) {
 
 }
 
-func updateUserGet() {
+func updateUserGet() (u user) {
 
 	var id string
 
 	fmt.Println("Escribe el ID del usuario que deseas editar")
+	fmt.Print("> ")
 	fmt.Scan(&id)
 
 	s := fmt.Sprintf("http://192.168.1.2:8080/user/update?id=%s", id)
@@ -218,11 +219,6 @@ func updateUserGet() {
 		fmt.Println(http.StatusText(http.StatusInternalServerError))
 		return
 	}
-
-	fmt.Printf("%s\n", body)
-
-	var u user
-
 	err = json.Unmarshal(body, &u)
 
 	if err != nil {
@@ -230,6 +226,52 @@ func updateUserGet() {
 		return
 	}
 
-	fmt.Println(u)
+	return
+
+}
+
+func updateUserPost(u user) {
+
+	var username, password string
+
+	fmt.Println("Introduzca los nuevos valores")
+	fmt.Print("Username: ")
+	fmt.Scan(&username)
+	fmt.Print("Password: ")
+	fmt.Scan(&password)
+
+	u.Username = username
+	u.Password = password
+
+	data, err := json.Marshal(u)
+
+	if err != nil {
+		fmt.Println(http.StatusText(http.StatusNotAcceptable))
+		return
+	}
+
+	dataReader := strings.NewReader(string(data))
+
+	res, err := http.Post("http://192.168.1.2:8080/user/update", "application/json", dataReader)
+
+	if err != nil {
+		fmt.Println(http.StatusText(http.StatusNotFound))
+		return
+	}
+
+	defer res.Body.Close()
+
+	body, err := ioutil.ReadAll(res.Body)
+
+	if err != nil {
+		fmt.Println(http.StatusText(http.StatusInternalServerError))
+		return
+	}
+
+	fmt.Printf("%s\n", body)
+
+}
+
+func deleteUser() {
 
 }

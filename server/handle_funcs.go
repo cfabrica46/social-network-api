@@ -6,7 +6,6 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"strconv"
 	"time"
 )
 
@@ -111,7 +110,7 @@ func deleteUser(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if len(users) < 1 {
+		if len(users) <= 1 {
 
 			users = []user{}
 
@@ -158,37 +157,20 @@ func updateUser(w http.ResponseWriter, r *http.Request) {
 
 		var u user
 
-		err := r.ParseForm()
+		err := json.NewDecoder(r.Body).Decode(&u)
 
 		if err != nil {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), 500)
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 			return
 		}
-
-		id := r.Form.Get("id")
-		username := r.Form.Get("username")
-		password := r.Form.Get("password")
-
-		if username == "" || password == "" {
-			http.Error(w, http.StatusText(http.StatusNotAcceptable), 400)
-			return
-		}
-
-		iD, err := strconv.Atoi(id)
-
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), 500)
-			return
-		}
-
-		u.ID = iD
-		u.Username = username
-		u.Password = password
 
 		for i := range users {
 
 			if users[i].ID == u.ID {
+
 				users[i] = u
+				break
+
 			}
 
 		}
@@ -196,9 +178,10 @@ func updateUser(w http.ResponseWriter, r *http.Request) {
 		err = json.NewEncoder(w).Encode(u)
 
 		if err != nil {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), 500)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
+
 	}
 
 }
