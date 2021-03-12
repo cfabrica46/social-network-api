@@ -34,6 +34,10 @@ func getUser(r url.Values) (u user, err error) {
 
 	key, err := parseID(r)
 
+	if err != nil {
+		return
+	}
+
 	for i := range users {
 
 		if users[i].ID == key {

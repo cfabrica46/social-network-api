@@ -14,14 +14,14 @@ func findUser(w http.ResponseWriter, r *http.Request) {
 		u, err := getUser(r.URL.Query())
 
 		if err != nil {
-			http.Error(w, http.StatusText(http.StatusNotFound), 400)
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			return
 		}
 
 		err = json.NewEncoder(w).Encode(u)
 
 		if err != nil {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), 500)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
 	}
@@ -33,7 +33,7 @@ func findUsers(w http.ResponseWriter, r *http.Request) {
 		err := json.NewEncoder(w).Encode(users)
 
 		if err != nil {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), 500)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
 	}
@@ -83,7 +83,7 @@ func deleteUser(w http.ResponseWriter, r *http.Request) {
 		u, err := getUser(r.URL.Query())
 
 		if err != nil {
-			http.Error(w, http.StatusText(http.StatusNotFound), 400)
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			return
 		}
 
@@ -104,7 +104,7 @@ func deleteUser(w http.ResponseWriter, r *http.Request) {
 		err = json.NewEncoder(w).Encode(u)
 
 		if err != nil {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), 500)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
 	}
@@ -119,14 +119,14 @@ func updateUser(w http.ResponseWriter, r *http.Request) {
 		u, err := getUser(r.URL.Query())
 
 		if err != nil {
-			http.Error(w, http.StatusText(http.StatusNotFound), 400)
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			return
 		}
 
 		err = json.NewEncoder(w).Encode(u)
 
 		if err != nil {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), 500)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
 
