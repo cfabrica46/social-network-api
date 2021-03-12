@@ -3,32 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"html/template"
-	"log"
 	"net/http"
 	"time"
 )
-
-func index(w http.ResponseWriter, r *http.Request) {
-
-	if r.Method == "GET" {
-
-		t, err := template.ParseFiles("./templates/index.html")
-
-		if err != nil {
-			log.Fatal(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), 500)
-			return
-		}
-
-		err = t.Execute(w, nil)
-
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), 500)
-			return
-		}
-	}
-}
 
 func findUser(w http.ResponseWriter, r *http.Request) {
 
