@@ -70,7 +70,7 @@ func main() {
 
 func findUsers() {
 
-	res, err := http.Get("http://192.168.1.2:8080/users/all")
+	res, err := http.Get("http://localhost:8080/users/all")
 
 	if err != nil {
 		fmt.Println(http.StatusText(http.StatusNotFound))
@@ -97,7 +97,7 @@ func findUser() {
 	fmt.Println("Escribe el ID del usuario que deseas ver")
 	fmt.Scan(&id)
 
-	s := fmt.Sprintf("http://192.168.1.2:8080/users/one?id=%s", id)
+	s := fmt.Sprintf("http://localhost:8080/users/one?id=%s", id)
 
 	res, err := http.Get(s)
 
@@ -125,7 +125,7 @@ func createUserGet() (u user) {
 
 	client := &http.Client{}
 
-	request, err := http.NewRequest("GET", "http://192.168.1.2:8080/user/create", nil)
+	request, err := http.NewRequest("GET", "http://localhost:8080/user/create", nil)
 
 	if err != nil {
 		fmt.Println(http.StatusText(http.StatusNotFound))
@@ -174,7 +174,7 @@ func createUserPost(u user) {
 
 	dataReader := strings.NewReader(string(data))
 
-	res, err := http.Post("http://192.168.1.2:8080/user/create", "application/json", dataReader)
+	res, err := http.Post("http://localhost:8080/user/create", "application/json", dataReader)
 
 	if err != nil {
 		fmt.Println(http.StatusText(http.StatusNotFound))
@@ -202,7 +202,7 @@ func updateUserGet() (u user) {
 	fmt.Print("> ")
 	fmt.Scan(&id)
 
-	s := fmt.Sprintf("http://192.168.1.2:8080/user/update?id=%s", id)
+	s := fmt.Sprintf("http://localhost:8080/user/update?id=%s", id)
 
 	res, err := http.Get(s)
 
@@ -252,7 +252,7 @@ func updateUserPost(u user) {
 
 	dataReader := strings.NewReader(string(data))
 
-	res, err := http.Post("http://192.168.1.2:8080/user/update", "application/json", dataReader)
+	res, err := http.Post("http://localhost:8080/user/update", "application/json", dataReader)
 
 	if err != nil {
 		fmt.Println(http.StatusText(http.StatusNotFound))
@@ -280,7 +280,7 @@ func deleteUser() {
 	fmt.Print("> ")
 	fmt.Scan(&id)
 
-	s := fmt.Sprintf("http://192.168.1.2:8080/user/delete?id=%s", id)
+	s := fmt.Sprintf("http://localhost:8080/user/delete?id=%s", id)
 
 	res, err := http.Get(s)
 
