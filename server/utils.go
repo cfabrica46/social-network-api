@@ -76,7 +76,7 @@ func open() (databases *sql.DB, err error) {
 	return
 }
 
-func getUser(userBeta user) (u *user, err error) {
+func getUser(userBeta user) (u user, err error) {
 
 	var userAux user
 
@@ -88,7 +88,7 @@ func getUser(userBeta user) (u *user, err error) {
 		return
 	}
 
-	u = &userAux
+	u = userAux
 
 	return
 }

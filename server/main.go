@@ -34,6 +34,8 @@ var db dataBases
 
 func main() {
 
+	log.SetFlags(log.Lshortfile)
+
 	databases, err := open()
 
 	if err != nil {
@@ -45,6 +47,7 @@ func main() {
 	}
 
 	http.HandleFunc("/user/profile", db.profile)
+	http.HandleFunc("/user/create", db.createUser)
 
 	fmt.Println("Listening on 8080")
 
