@@ -1,161 +1,70 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
-	"fmt"
+	"log"
 	"net/http"
-	"time"
 )
 
-func findUser(w http.ResponseWriter, r *http.Request) {
-
-	if r.Method == "GET" {
-
-		u, err := getUser(r.URL.Query())
-
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-			return
-		}
-
-		err = json.NewEncoder(w).Encode(u)
-
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-	}
-}
-
-func findUsers(w http.ResponseWriter, r *http.Request) {
-
-	if r.Method == "GET" {
-		err := json.NewEncoder(w).Encode(users)
-
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-	}
-}
-
-func createUser(w http.ResponseWriter, r *http.Request) {
+func (d *dataBases) profile(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
+	case "CONNECT":
+
+		p := page{
+			Title:   "Ingrese sus Datos",
+			Options: []string{userName, passWord},
+		}
+
+		err := json.NewEncoder(w).Encode(p)
+
+		if err != nil {
+			p.Err = http.StatusText(http.StatusInternalServerError)
+			return
+		}
+
 	case "GET":
 
-		fmt.Fprint(w, "Introduce tus Datos\n")
+		var userBeta user
+		var p page
 
-	case "POST":
-
-		var u user
-
-		err := json.NewDecoder(r.Body).Decode(&u)
+		err := json.NewDecoder(r.Body).Decode(&userBeta)
 
 		if err != nil {
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			p.Err = http.StatusText(http.StatusInternalServerError)
 			return
 		}
 
-		idInt64 := time.Now().UnixNano()
-
-		id := int(idInt64)
-
-		u.ID = id
-
-		users = append(users, u)
-
-		err = json.NewEncoder(w).Encode(u)
+		u, err := getUser(userBeta)
 
 		if err != nil {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-
-	}
-
-}
-
-func deleteUser(w http.ResponseWriter, r *http.Request) {
-
-	if r.Method == "GET" {
-
-		u, err := getUser(r.URL.Query())
-
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-			return
-		}
-
-		if len(users) <= 1 {
-
-			users = []user{}
-
-		} else {
-
-			for i := range users {
-				if users[i] == u {
-					users = append(users[:i], users[i+1:]...)
-					break
+			if err == sql.ErrNoRows {
+				if u == nil {
+					p.Err = http.StatusText(http.StatusNotFound)
+					json.NewEncoder(w).Encode(p)
+					return
 				}
+				p.Err = http.StatusText(http.StatusNotFound)
+				json.NewEncoder(w).Encode(p)
+				return
 			}
-		}
+			log.Fatal(err)
 
-		err = json.NewEncoder(w).Encode(u)
-
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-	}
-
-}
-
-func updateUser(w http.ResponseWriter, r *http.Request) {
-
-	switch r.Method {
-	case "GET":
-
-		u, err := getUser(r.URL.Query())
-
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			p.Err = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(p)
 			return
 		}
 
-		err = json.NewEncoder(w).Encode(u)
-
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
+		p = page{
+			Title: "Mi Perfil",
+			User:  *u,
 		}
 
-	case "POST":
-
-		var u user
-
-		err := json.NewDecoder(r.Body).Decode(&u)
+		err = json.NewEncoder(w).Encode(p)
 
 		if err != nil {
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-			return
-		}
-
-		for i := range users {
-
-			if users[i].ID == u.ID {
-
-				users[i] = u
-				break
-
-			}
-
-		}
-
-		err = json.NewEncoder(w).Encode(u)
-
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			p.Err = http.StatusText(http.StatusInternalServerError)
 			return
 		}
 

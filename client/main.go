@@ -1,12 +1,21 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
+	"log"
 	"net/http"
-	"strings"
+	"time"
 )
+
+type page struct {
+	Title   string
+	Options []string
+	User    user
+	Err     string
+}
 
 type user struct {
 	ID                 int
@@ -15,19 +24,27 @@ type user struct {
 
 func main() {
 
+	log.SetFlags(log.Llongfile)
+
 	var election int
 	var exit bool
 
-	for exit == false {
+	for !exit {
 
-		fmt.Println("1.Get User")
-		fmt.Println("2.Get All Users")
-		fmt.Println("3.Create User")
-		fmt.Println("4.Update User")
-		fmt.Println("5.Delete User")
+		fmt.Println()
+		fmt.Println("Bienvenido")
+		fmt.Println("¿Qué deseas hacer?")
+		fmt.Println()
+
+		fmt.Println("1.Ir a tu Perfil")
 		fmt.Println("0.Salir")
+		fmt.Println()
+
+		fmt.Print(">")
 
 		fmt.Scan(&election)
+
+		fmt.Println()
 
 		switch election {
 
@@ -37,27 +54,13 @@ func main() {
 
 		case 1:
 
-			findUser()
+			userBeta, err := profileCONNECT()
 
-		case 2:
+			if err != nil {
+				log.Fatal(err)
+			}
 
-			findUsers()
-
-		case 3:
-
-			u := createUserGet()
-
-			createUserPost(u)
-
-		case 4:
-
-			u := updateUserGet()
-
-			updateUserPost(u)
-
-		case 5:
-
-			deleteUser()
+			profileGET(userBeta)
 
 		default:
 
@@ -68,236 +71,98 @@ func main() {
 	}
 }
 
-func findUsers() {
+func profileCONNECT() (userBeta user, err error) {
 
-	res, err := http.Get("http://localhost:8080/users/all")
+	var p page
+
+	client := &http.Client{
+		Timeout: time.Second * 20,
+	}
+
+	req, err := http.NewRequest("CONNECT", "http://localhost:8080/user/profile", nil)
 
 	if err != nil {
-		fmt.Println(http.StatusText(http.StatusNotFound))
+		return
+	}
+
+	res, err := client.Do(req)
+
+	if err != nil {
 		return
 	}
 
 	defer res.Body.Close()
 
-	body, err := ioutil.ReadAll(res.Body)
+	err = json.NewDecoder(res.Body).Decode(&p)
 
 	if err != nil {
-		fmt.Println(http.StatusText(http.StatusInternalServerError))
 		return
 	}
 
-	fmt.Printf("%s\n", body)
+	if p.Err != "" {
 
-}
-
-func findUser() {
-
-	var id string
-
-	fmt.Println("Escribe el ID del usuario que deseas ver")
-	fmt.Scan(&id)
-
-	s := fmt.Sprintf("http://localhost:8080/users/one?id=%s", id)
-
-	res, err := http.Get(s)
-
-	if err != nil {
-		fmt.Println(http.StatusText(http.StatusNotFound))
+		fmt.Printf("\nERROR: %s\n", p.Err)
 		return
+
 	}
 
-	defer res.Body.Close()
-
-	body, err := ioutil.ReadAll(res.Body)
-
-	if err != nil {
-		fmt.Println(http.StatusText(http.StatusInternalServerError))
-		return
-	}
-
-	fmt.Printf("%s\n", body)
-
-}
-
-func createUserGet() (u user) {
-
-	var username, password string
-
-	client := &http.Client{}
-
-	request, err := http.NewRequest("GET", "http://localhost:8080/user/create", nil)
-
-	if err != nil {
-		fmt.Println(http.StatusText(http.StatusNotFound))
-		return
-	}
-
-	response, err := client.Do(request)
-
-	if err != nil {
-		fmt.Println(http.StatusText(http.StatusConflict))
-		return
-	}
-
-	defer response.Body.Close()
-
-	body, err := ioutil.ReadAll(response.Body)
-
-	if err != nil {
-		fmt.Println(http.StatusText(http.StatusNotAcceptable))
-		return
-	}
-
-	fmt.Printf("%s", body)
-
-	fmt.Print("Username: ")
-	fmt.Scan(&username)
-	fmt.Print("Password: ")
-	fmt.Scan(&password)
-
-	u = user{
-		Username: username,
-		Password: password,
-	}
+	fmt.Printf("\n%s\n", p.Title)
+	fmt.Printf("%s: ", p.Options[0])
+	fmt.Scan(&userBeta.Username)
+	fmt.Printf("%s: ", p.Options[1])
+	fmt.Scan(&userBeta.Password)
 
 	return
 }
 
-func createUserPost(u user) {
+func profileGET(userBeta user) (err error) {
 
-	data, err := json.Marshal(u)
+	var p page
+
+	client := &http.Client{
+		Timeout: time.Second * 20,
+	}
+
+	dataJSON, err := json.Marshal(userBeta)
 
 	if err != nil {
-		fmt.Println(http.StatusText(http.StatusNotAcceptable))
 		return
 	}
 
-	dataReader := strings.NewReader(string(data))
+	buf := bytes.NewBuffer(dataJSON)
 
-	res, err := http.Post("http://localhost:8080/user/create", "application/json", dataReader)
+	req, err := http.NewRequest("GET", "http://localhost:8080/user/profile", buf)
 
 	if err != nil {
-		fmt.Println(http.StatusText(http.StatusNotFound))
-		return
+		log.Fatal(err)
 	}
 
-	defer res.Body.Close()
-
-	body, err := ioutil.ReadAll(res.Body)
+	res, err := client.Do(req)
 
 	if err != nil {
-		fmt.Println(http.StatusText(http.StatusInternalServerError))
-		return
-	}
-
-	fmt.Printf("%s\n", body)
-
-}
-
-func updateUserGet() (u user) {
-
-	var id string
-
-	fmt.Println("Escribe el ID del usuario que deseas editar")
-	fmt.Print("> ")
-	fmt.Scan(&id)
-
-	s := fmt.Sprintf("http://localhost:8080/user/update?id=%s", id)
-
-	res, err := http.Get(s)
-
-	if err != nil {
-		fmt.Println(http.StatusText(http.StatusNotFound))
-		return
+		log.Fatal(err)
 	}
 
 	defer res.Body.Close()
 
-	body, err := ioutil.ReadAll(res.Body)
+	err = json.NewDecoder(res.Body).Decode(&p)
 
 	if err != nil {
-		fmt.Println(http.StatusText(http.StatusInternalServerError))
-		return
+		if err != io.EOF {
+			log.Fatal(err)
+		}
 	}
-	err = json.Unmarshal(body, &u)
 
-	if err != nil {
-		fmt.Println(http.StatusText(http.StatusInternalServerError))
+	if p.Err != "" {
+
+		fmt.Printf("\nERROR: %s\n", p.Err)
 		return
+
 	}
+
+	fmt.Printf("\n%s\n", p.Title)
+
+	fmt.Printf("Bienvenido %s tu ID es: %d\n", p.User.Username, p.User.ID)
 
 	return
-
-}
-
-func updateUserPost(u user) {
-
-	var username, password string
-
-	fmt.Println("Introduzca los nuevos valores")
-	fmt.Print("Username: ")
-	fmt.Scan(&username)
-	fmt.Print("Password: ")
-	fmt.Scan(&password)
-
-	u.Username = username
-	u.Password = password
-
-	data, err := json.Marshal(u)
-
-	if err != nil {
-		fmt.Println(http.StatusText(http.StatusNotAcceptable))
-		return
-	}
-
-	dataReader := strings.NewReader(string(data))
-
-	res, err := http.Post("http://localhost:8080/user/update", "application/json", dataReader)
-
-	if err != nil {
-		fmt.Println(http.StatusText(http.StatusNotFound))
-		return
-	}
-
-	defer res.Body.Close()
-
-	body, err := ioutil.ReadAll(res.Body)
-
-	if err != nil {
-		fmt.Println(http.StatusText(http.StatusInternalServerError))
-		return
-	}
-
-	fmt.Printf("%s\n", body)
-
-}
-
-func deleteUser() {
-
-	var id string
-
-	fmt.Println("Escribe el ID del usuario que deseas eleminar")
-	fmt.Print("> ")
-	fmt.Scan(&id)
-
-	s := fmt.Sprintf("http://localhost:8080/user/delete?id=%s", id)
-
-	res, err := http.Get(s)
-
-	if err != nil {
-		fmt.Println(http.StatusText(http.StatusNotFound))
-		return
-	}
-
-	defer res.Body.Close()
-
-	body, err := ioutil.ReadAll(res.Body)
-
-	if err != nil {
-		fmt.Println(http.StatusText(http.StatusInternalServerError))
-		return
-	}
-
-	fmt.Printf("%s\n", body)
-
 }

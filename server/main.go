@@ -1,43 +1,54 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
 )
+
+const (
+	login    = "login"
+	register = "register"
+	userName = "Username"
+	passWord = "Password"
+)
+
+type page struct {
+	Title   string
+	Options []string
+	User    user
+	Err     string
+}
 
 type user struct {
 	ID                 int
 	Username, Password string
 }
 
-var users = []user{
-	{
-		ID:       1,
-		Username: "cfabrica46",
-		Password: "01234",
-	},
-	{
-		ID:       2,
-		Username: "arthuronavah",
-		Password: "456456",
-	},
+type dataBases struct {
+	d *sql.DB
 }
+
+var db dataBases
 
 func main() {
 
-	http.HandleFunc("/users/one", findUser)
+	databases, err := open()
 
-	http.HandleFunc("/users/all", findUsers)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	http.HandleFunc("/user/create", createUser)
+	db = dataBases{
+		d: databases,
+	}
 
-	http.HandleFunc("/user/delete", deleteUser)
-
-	http.HandleFunc("/user/update", updateUser)
+	http.HandleFunc("/user/profile", db.profile)
 
 	fmt.Println("Listening on 8080")
-	err := http.ListenAndServe(":8080", nil)
+
+	err = http.ListenAndServe(":8080", nil)
 
 	if err != nil {
 		log.Fatal(err)
