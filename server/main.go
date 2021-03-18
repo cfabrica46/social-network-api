@@ -64,6 +64,7 @@ func main() {
 	http.HandleFunc("/user/post/delete", db.deletePost)
 	http.HandleFunc("/user/friends/show", db.showFriends)
 	http.HandleFunc("/user/friends/add", db.addFriend)
+	http.HandleFunc("/user/friends/delete", db.deleteFriend)
 
 	fmt.Println("Listening on 8080")
 

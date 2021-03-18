@@ -267,15 +267,15 @@ func insertPostPivote(postID, userID int) {
 
 }
 
-func deletePostFromDatabases(postID int) (err error) {
+func deletePostFromDatabases(postID, userID int) (err error) {
 
-	stmt, err := db.d.Prepare("DELETE FROM posts WHERE id = ?")
+	stmt, err := db.d.Prepare("DELETE FROM posts INNER JOIN users_posts.postID=posts.id WHERE id = ? AND users_posts.userID=?")
 
 	if err != nil {
 		return
 	}
 
-	_, err = stmt.Exec(postID)
+	_, err = stmt.Exec(postID, userID)
 
 	if err != nil {
 		return
@@ -346,5 +346,22 @@ func addFriendIntoDatabases(userID, friendID int) (err error) {
 	if err != nil {
 		return
 	}
+	return
+}
+
+func deleteFriendFromDatabases(friendID, userID int) (err error) {
+
+	stmt, err := db.d.Prepare("DELETE FROM friends WHERE id1 = ? AND id2 = ? OR id1 = ? AND id2 = ?")
+
+	if err != nil {
+		return
+	}
+
+	_, err = stmt.Exec(friendID, userID, userID, friendID)
+
+	if err != nil {
+		return
+	}
+
 	return
 }

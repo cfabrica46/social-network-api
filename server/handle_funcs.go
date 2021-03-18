@@ -334,7 +334,7 @@ func (d dataBases) deletePost(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		err = deletePostFromDatabases(p.Posts[0].ID)
+		err = deletePostFromDatabases(p.Posts[0].ID, p.User.ID)
 
 		if err != nil {
 			p.Err = http.StatusText(http.StatusInternalServerError)
@@ -453,4 +453,45 @@ func (d dataBases) addFriend(w http.ResponseWriter, r *http.Request) {
 		}
 
 	}
+}
+
+func (d dataBases) deleteFriend(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method == "DELETE" {
+
+		var p page
+
+		err := json.NewDecoder(r.Body).Decode(&p)
+
+		if err != nil {
+			p.Err = http.StatusText(http.StatusInternalServerError)
+			return
+		}
+
+		_, err = getUser(p.User)
+
+		if err != nil {
+			if err != sql.ErrNoRows {
+				p.Err = http.StatusText(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(p)
+				return
+			}
+		}
+
+		err = deleteFriendFromDatabases(p.Friends[0].ID, p.User.ID)
+
+		if err != nil {
+			p.Err = http.StatusText(http.StatusInternalServerError)
+			return
+		}
+
+		err = json.NewEncoder(w).Encode(p)
+
+		if err != nil {
+			p.Err = http.StatusText(http.StatusInternalServerError)
+			return
+		}
+
+	}
+
 }

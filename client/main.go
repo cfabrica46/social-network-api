@@ -137,7 +137,8 @@ func loopIntoProfile(u user, exit *bool) {
 	fmt.Println("4.Eliminar Un Post")
 	fmt.Println("5.Mostrar Amigos")
 	fmt.Println("6.Añadir Amigo")
-	fmt.Println("7.Eliminar Cuenta")
+	fmt.Println("7.Eliminar Amigo")
+	fmt.Println("8.Eliminar Cuenta")
 	fmt.Println("0.Salir")
 	fmt.Println()
 
@@ -241,9 +242,30 @@ func loopIntoProfile(u user, exit *bool) {
 		fmt.Print("> ")
 		fmt.Scan(&friendID)
 
-		addFriend(u, friendID)
+		err := addFriend(u, friendID)
+
+		if err != nil {
+			if err != io.EOF {
+				log.Fatal(err)
+			}
+		}
 
 	case 7:
+		var friendID int
+
+		fmt.Println("Escribe el ID del amigo que deseas eliminar")
+		fmt.Print("> ")
+		fmt.Scan(&friendID)
+
+		err := deleteFriend(u, friendID)
+
+		if err != nil {
+			if err != io.EOF {
+				log.Fatal(err)
+			}
+		}
+
+	case 8:
 
 		var security string
 
@@ -752,6 +774,61 @@ func addFriend(u user, friendID int) (err error) {
 	}
 
 	fmt.Printf("\nSe añadio un nuevo amigo con éxito\n")
+
+	return
+
+}
+
+func deleteFriend(u user, friendID int) (err error) {
+
+	var p page
+
+	client := &http.Client{
+		Timeout: time.Second * 20,
+	}
+
+	p = page{
+		User:    u,
+		Friends: []user{{ID: friendID}},
+	}
+
+	dataJSON, err := json.Marshal(p)
+
+	if err != nil {
+		return
+	}
+
+	buf := bytes.NewBuffer(dataJSON)
+
+	req, err := http.NewRequest("DELETE", "http://localhost:8080/user/friends/delete", buf)
+
+	if err != nil {
+		return
+	}
+
+	res, err := client.Do(req)
+
+	if err != nil {
+		return
+	}
+
+	defer res.Body.Close()
+
+	err = json.NewDecoder(res.Body).Decode(&p)
+
+	if err != nil {
+		if err != io.EOF {
+			return
+		}
+	}
+
+	if p.Err != "" {
+		fmt.Printf("\nERROR: %s\n", p.Err)
+		err = nil
+		return
+	}
+
+	fmt.Printf("\nSe eliminó tu amistad con exito\n")
 
 	return
 
