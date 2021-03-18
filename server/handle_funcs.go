@@ -131,26 +131,95 @@ func (d *dataBases) createUser(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func insertIntoDatabase(u *user) (err error) {
+func (d *dataBases) deleteUser(w http.ResponseWriter, r *http.Request) {
 
-	stmt, err := db.d.Prepare("INSERT INTO users(username,password) VALUES (?,?)")
+	switch r.Method {
+	case "DELETE":
 
-	if err != nil {
-		return
+		var p page
+		var userBeta user
+
+		err := json.NewDecoder(r.Body).Decode(&userBeta)
+
+		if err != nil {
+			p.Err = http.StatusText(http.StatusInternalServerError)
+			return
+		}
+
+		u, err := getUser(userBeta)
+
+		if err != nil {
+			if err != sql.ErrNoRows {
+				p.Err = http.StatusText(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(p)
+				return
+			}
+		}
+
+		err = deleteUserIntoDatabases(u)
+
+		if err != nil {
+			p.Err = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(p)
+		}
+
+		p = page{
+			Title: "Se eliminó la cuenta con éxito",
+		}
+
+		err = json.NewEncoder(w).Encode(p)
+
+		if err != nil {
+			p.Err = http.StatusText(http.StatusInternalServerError)
+			return
+		}
+
 	}
-	res, err := stmt.Exec(u.Username, u.Password)
 
-	if err != nil {
-		return
+}
+
+func (d dataBases) getMyPosts(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method == "GET" {
+
+		var p page
+		var userBeta user
+
+		err := json.NewDecoder(r.Body).Decode(&userBeta)
+
+		if err != nil {
+			p.Err = http.StatusText(http.StatusInternalServerError)
+			return
+		}
+
+		_, err = getUser(userBeta)
+
+		if err != nil {
+			if err != sql.ErrNoRows {
+				p.Err = http.StatusText(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(p)
+				return
+			}
+		}
+
+		posts, err := obtainMyPosts(userBeta)
+
+		if err != nil {
+			p.Err = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(p)
+			return
+		}
+
+		p = page{
+			Posts: posts,
+		}
+
+		err = json.NewEncoder(w).Encode(p)
+
+		if err != nil {
+			p.Err = http.StatusText(http.StatusInternalServerError)
+			return
+		}
+
 	}
-
-	id, err := res.LastInsertId()
-
-	if err != nil {
-		return
-	}
-
-	u.ID = int(id)
-
-	return
 }

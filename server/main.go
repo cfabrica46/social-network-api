@@ -18,12 +18,20 @@ type page struct {
 	Title   string
 	Options []string
 	User    user
+	Posts   []post
 	Err     string
 }
 
 type user struct {
 	ID                 int
 	Username, Password string
+}
+
+type post struct {
+	Propetary string
+	ID        int
+	Contet    string
+	Date      string
 }
 
 type dataBases struct {
@@ -48,6 +56,8 @@ func main() {
 
 	http.HandleFunc("/user/profile", db.profile)
 	http.HandleFunc("/user/create", db.createUser)
+	http.HandleFunc("/user/delete", db.deleteUser)
+	http.HandleFunc("/user/post/one", db.getMyPosts)
 
 	fmt.Println("Listening on 8080")
 

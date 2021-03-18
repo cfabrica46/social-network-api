@@ -92,3 +92,66 @@ func getUser(userBeta user) (u user, err error) {
 
 	return
 }
+
+func insertIntoDatabase(u *user) (err error) {
+
+	stmt, err := db.d.Prepare("INSERT INTO users(username,password) VALUES (?,?)")
+
+	if err != nil {
+		return
+	}
+	res, err := stmt.Exec(u.Username, u.Password)
+
+	if err != nil {
+		return
+	}
+
+	id, err := res.LastInsertId()
+
+	if err != nil {
+		return
+	}
+
+	u.ID = int(id)
+
+	return
+}
+
+func deleteUserIntoDatabases(u user) (err error) {
+
+	stmt, err := db.d.Prepare("DELETE FROM users WHERE id = ? AND username = ? AND password = ?")
+
+	if err != nil {
+		return
+	}
+
+	_, err = stmt.Exec(u.ID, u.Username, u.Password)
+
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+func obtainMyPosts(u user) (posts []post, err error) {
+
+	rows, err := db.d.Query("SELECT users.username,posts.content,posts.date FROM users_posts INNER JOIN users ON users_posts.userID = users.id INNER JOIN posts ON users_posts.postID = posts.id WHERE users.id = ? ORDER BY posts.date DESC", u.ID)
+
+	if err != nil {
+		return
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+
+		var postAux post
+
+		rows.Scan(&postAux.Propetary, &postAux.Contet, &postAux.Date)
+
+		posts = append(posts, postAux)
+	}
+
+	return
+}
