@@ -16,6 +16,7 @@ type page struct {
 	Title   string
 	Options []string
 	User    user
+	Friends []user
 	Posts   []post
 	Err     string
 }
@@ -134,7 +135,9 @@ func loopIntoProfile(u user, exit *bool) {
 	fmt.Println("2.Ver Todos Los Posts")
 	fmt.Println("3.Añadir Un Post")
 	fmt.Println("4.Eliminar Un Post")
-	fmt.Println("5.Eliminar Cuenta")
+	fmt.Println("5.Mostrar Amigos")
+	fmt.Println("6.Añadir Amigo")
+	fmt.Println("7.Eliminar Cuenta")
 	fmt.Println("0.Salir")
 	fmt.Println()
 
@@ -214,6 +217,33 @@ func loopIntoProfile(u user, exit *bool) {
 		}
 
 	case 5:
+
+		friends, err := getFriends(u)
+
+		if err != nil {
+			if err != io.EOF {
+				log.Fatal(err)
+			}
+		}
+
+		if len(friends) == 0 {
+			fmt.Printf("No tienes amigos\n")
+			return
+		}
+
+		printFriends(friends)
+
+	case 6:
+
+		var friendID int
+
+		fmt.Println("Escribe el ID del amigo a agregar")
+		fmt.Print("> ")
+		fmt.Scan(&friendID)
+
+		addFriend(u, friendID)
+
+	case 7:
 
 		var security string
 
@@ -605,6 +635,123 @@ func deletePost(u user, postID int) (err error) {
 	}
 
 	fmt.Printf("\nSe eliminó tu post con exito\n")
+
+	return
+
+}
+
+func getFriends(u user) (friends []user, err error) {
+
+	var p page
+
+	client := &http.Client{
+		Timeout: time.Second * 20,
+	}
+
+	dataJSON, err := json.Marshal(u)
+
+	if err != nil {
+		return
+	}
+
+	buf := bytes.NewBuffer(dataJSON)
+
+	req, err := http.NewRequest("GET", "http://localhost:8080/user/friends/show", buf)
+
+	if err != nil {
+		return
+	}
+
+	res, err := client.Do(req)
+
+	if err != nil {
+		return
+	}
+
+	defer res.Body.Close()
+
+	err = json.NewDecoder(res.Body).Decode(&p)
+
+	if err != nil {
+		if err != io.EOF {
+			return
+		}
+	}
+
+	if p.Err != "" {
+		fmt.Printf("\nERROR: %s\n", p.Err)
+		err = nil
+		return
+	}
+
+	friends = p.Friends
+
+	return
+}
+
+func printFriends(friends []user) {
+
+	fmt.Println("Tus amigos:")
+
+	for i := range friends {
+
+		fmt.Printf("%d. %s\n", friends[i].ID, friends[i].Username)
+
+	}
+	fmt.Println()
+
+}
+
+func addFriend(u user, friendID int) (err error) {
+
+	var p page
+
+	client := &http.Client{
+		Timeout: time.Second * 20,
+	}
+
+	p = page{
+		User:    u,
+		Friends: []user{{ID: friendID}},
+	}
+
+	dataJSON, err := json.Marshal(p)
+
+	if err != nil {
+		return
+	}
+
+	buf := bytes.NewBuffer(dataJSON)
+
+	req, err := http.NewRequest("POST", "http://localhost:8080/user/friends/add", buf)
+
+	if err != nil {
+		return
+	}
+
+	res, err := client.Do(req)
+
+	if err != nil {
+		return
+	}
+
+	defer res.Body.Close()
+
+	err = json.NewDecoder(res.Body).Decode(&p)
+
+	if err != nil {
+		if err != io.EOF {
+			return
+		}
+	}
+
+	if p.Err != "" {
+		fmt.Printf("\nERROR: %s\n", p.Err)
+		err = nil
+		return
+	}
+
+	fmt.Printf("\nSe añadio un nuevo amigo con éxito\n")
 
 	return
 

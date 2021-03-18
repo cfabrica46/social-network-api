@@ -18,6 +18,7 @@ type page struct {
 	Title   string
 	Options []string
 	User    user
+	Friends []user
 	Posts   []post
 	Err     string
 }
@@ -61,6 +62,8 @@ func main() {
 	http.HandleFunc("/user/post/all", db.getAllFriendsPosts)
 	http.HandleFunc("/user/post/add", db.addPost)
 	http.HandleFunc("/user/post/delete", db.deletePost)
+	http.HandleFunc("/user/friends/show", db.showFriends)
+	http.HandleFunc("/user/friends/add", db.addFriend)
 
 	fmt.Println("Listening on 8080")
 

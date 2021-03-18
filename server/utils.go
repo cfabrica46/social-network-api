@@ -266,3 +266,85 @@ func insertPostPivote(postID, userID int) {
 	}
 
 }
+
+func deletePostFromDatabases(postID int) (err error) {
+
+	stmt, err := db.d.Prepare("DELETE FROM posts WHERE id = ?")
+
+	if err != nil {
+		return
+	}
+
+	_, err = stmt.Exec(postID)
+
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+func obtainAllFriends(u user) (friends []user, err error) {
+
+	idFriends, err := obtainIDFriends(u)
+
+	if err != nil {
+		return
+	}
+
+	for i := range idFriends {
+
+		var userAux user
+
+		row := db.d.QueryRow("SELECT id,username FROM users WHERE id = ? ", idFriends[i])
+
+		err = row.Scan(&userAux.ID, &userAux.Username)
+
+		if err != nil {
+			return
+		}
+
+		friends = append(friends, userAux)
+
+	}
+
+	return
+}
+
+func checkIfFriendExist(id int, userID int) (check bool, err error) {
+
+	var userAux user
+
+	row := db.d.QueryRow("SELECT id1,id2 FROM friends WHERE id1 = ? AND id2 = ? OR id1 = ? AND id2 = ? ", id, userID, userID, id)
+
+	err = row.Scan(&userAux.ID, &userAux.Username, &userAux.Password)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			check = true
+		}
+		check = true
+		return
+	}
+
+	check = false
+
+	return
+
+}
+
+func addFriendIntoDatabases(userID, friendID int) (err error) {
+
+	stmt, err := db.d.Prepare("INSERT INTO friends(id1,id2) VALUES (?,?)")
+
+	if err != nil {
+		return
+	}
+
+	_, err = stmt.Exec(userID, friendID)
+
+	if err != nil {
+		return
+	}
+	return
+}

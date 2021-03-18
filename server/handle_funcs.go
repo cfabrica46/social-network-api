@@ -334,7 +334,7 @@ func (d dataBases) deletePost(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		err = deletePostFromDatabases(p.Posts[0].ID, p.User.ID)
+		err = deletePostFromDatabases(p.Posts[0].ID)
 
 		if err != nil {
 			p.Err = http.StatusText(http.StatusInternalServerError)
@@ -352,19 +352,105 @@ func (d dataBases) deletePost(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func deletePostFromDatabases(postID int, userID int) (err error) {
+func (d dataBases) showFriends(w http.ResponseWriter, r *http.Request) {
 
-	stmt, err := db.d.Prepare("DELETE FROM posts WHERE id = ?")
+	if r.Method == "GET" {
 
-	if err != nil {
-		return
+		var p page
+		var userBeta user
+
+		err := json.NewDecoder(r.Body).Decode(&userBeta)
+
+		if err != nil {
+			p.Err = http.StatusText(http.StatusInternalServerError)
+			return
+		}
+
+		_, err = getUser(userBeta)
+
+		if err != nil {
+			if err != sql.ErrNoRows {
+				p.Err = http.StatusText(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(p)
+				return
+			}
+		}
+
+		friends, err := obtainAllFriends(userBeta)
+
+		if err != nil {
+			p.Err = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(p)
+			return
+		}
+
+		p = page{
+			Friends: friends,
+		}
+
+		err = json.NewEncoder(w).Encode(p)
+
+		if err != nil {
+			p.Err = http.StatusText(http.StatusInternalServerError)
+			return
+		}
+
 	}
 
-	_, err = stmt.Exec(postID)
+}
 
-	if err != nil {
-		return
+func (d dataBases) addFriend(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method == "POST" {
+
+		var p page
+
+		err := json.NewDecoder(r.Body).Decode(&p)
+
+		if err != nil {
+			p.Err = http.StatusText(http.StatusInternalServerError)
+			return
+		}
+
+		_, err = getUser(p.User)
+
+		if err != nil {
+			if err != sql.ErrNoRows {
+				p.Err = http.StatusText(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(p)
+				return
+			}
+		}
+
+		check, err := checkIfFriendExist(p.Friends[0].ID, p.User.ID)
+
+		if err != nil {
+			if err != sql.ErrNoRows {
+				p.Err = http.StatusText(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(p)
+				return
+			}
+		}
+
+		if !check {
+			p.Err = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(p)
+			return
+		}
+
+		err = addFriendIntoDatabases(p.User.ID, p.Friends[0].ID)
+
+		if err != nil {
+			p.Err = http.StatusText(http.StatusInternalServerError)
+			return
+		}
+
+		err = json.NewEncoder(w).Encode(p)
+
+		if err != nil {
+			p.Err = http.StatusText(http.StatusInternalServerError)
+			return
+		}
+
 	}
-
-	return
 }
