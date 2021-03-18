@@ -267,21 +267,22 @@ func insertPostPivote(postID, userID int) {
 
 }
 
-func deletePostFromDatabases(postID, userID int) (err error) {
+func deletePostFromDatabases(postID int) (err error) {
 
-	stmt, err := db.d.Prepare("DELETE FROM posts INNER JOIN users_posts.postID=posts.id WHERE id = ? AND users_posts.userID=?")
+	stmt, err := db.d.Prepare("DELETE FROM posts WHERE id = ? ")
 
 	if err != nil {
 		return
 	}
 
-	_, err = stmt.Exec(postID, userID)
+	_, err = stmt.Exec(postID)
 
 	if err != nil {
 		return
 	}
 
 	return
+
 }
 
 func obtainAllFriends(u user) (friends []user, err error) {
@@ -311,23 +312,45 @@ func obtainAllFriends(u user) (friends []user, err error) {
 	return
 }
 
-func checkIfFriendExist(id int, userID int) (check bool, err error) {
+func checkIfMyFriendExist(id int, userID int) (check bool, err error) {
 
-	var userAux user
+	var id1, id2 int
 
 	row := db.d.QueryRow("SELECT id1,id2 FROM friends WHERE id1 = ? AND id2 = ? OR id1 = ? AND id2 = ? ", id, userID, userID, id)
 
-	err = row.Scan(&userAux.ID, &userAux.Username, &userAux.Password)
+	err = row.Scan(&id1, &id2)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			check = true
+			check = false
 		}
-		check = true
+		check = false
 		return
 	}
 
-	check = false
+	check = true
+
+	return
+
+}
+
+func checkIfMyPostExist(id int, userID int) (check bool, err error) {
+
+	var idPost, idUser int
+
+	row := db.d.QueryRow("SELECT userID,postID FROM users_posts WHERE postID = ? AND userID = ?", id, userID, userID, id)
+
+	err = row.Scan(&idUser, &idPost)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			check = false
+		}
+		check = false
+		return
+	}
+
+	check = true
 
 	return
 
@@ -354,6 +377,7 @@ func deleteFriendFromDatabases(friendID, userID int) (err error) {
 	stmt, err := db.d.Prepare("DELETE FROM friends WHERE id1 = ? AND id2 = ? OR id1 = ? AND id2 = ?")
 
 	if err != nil {
+		log.Fatal(err)
 		return
 	}
 

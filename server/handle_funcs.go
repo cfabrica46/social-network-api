@@ -334,7 +334,23 @@ func (d dataBases) deletePost(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		err = deletePostFromDatabases(p.Posts[0].ID, p.User.ID)
+		check, err := checkIfMyPostExist(p.Posts[0].ID, p.User.ID)
+
+		if err != nil {
+			if err != sql.ErrNoRows {
+				p.Err = http.StatusText(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(p)
+				return
+			}
+		}
+
+		if !check {
+			p.Err = http.StatusText(http.StatusSeeOther)
+			json.NewEncoder(w).Encode(p)
+			return
+		}
+
+		err = deletePostFromDatabases(p.Posts[0].ID)
 
 		if err != nil {
 			p.Err = http.StatusText(http.StatusInternalServerError)
@@ -422,7 +438,7 @@ func (d dataBases) addFriend(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		check, err := checkIfFriendExist(p.Friends[0].ID, p.User.ID)
+		check, err := checkIfMyFriendExist(p.Friends[0].ID, p.User.ID)
 
 		if err != nil {
 			if err != sql.ErrNoRows {
@@ -432,8 +448,8 @@ func (d dataBases) addFriend(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		if !check {
-			p.Err = http.StatusText(http.StatusInternalServerError)
+		if check {
+			p.Err = http.StatusText(http.StatusSeeOther)
 			json.NewEncoder(w).Encode(p)
 			return
 		}
@@ -476,6 +492,22 @@ func (d dataBases) deleteFriend(w http.ResponseWriter, r *http.Request) {
 				json.NewEncoder(w).Encode(p)
 				return
 			}
+		}
+
+		check, err := checkIfMyFriendExist(p.Friends[0].ID, p.User.ID)
+
+		if err != nil {
+			if err != sql.ErrNoRows {
+				p.Err = http.StatusText(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(p)
+				return
+			}
+		}
+
+		if !check {
+			p.Err = http.StatusText(http.StatusSeeOther)
+			json.NewEncoder(w).Encode(p)
+			return
 		}
 
 		err = deleteFriendFromDatabases(p.Friends[0].ID, p.User.ID)
