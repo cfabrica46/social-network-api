@@ -28,14 +28,13 @@ type user struct {
 type post struct {
 	Propetary string
 	ID        int
-	Contet    string
+	Content   string
 	Date      string
 }
 
 var (
 	errNotAccept           = errors.New("username o password incorrectas")
 	errUsernameAlreadyUsed = errors.New("username ya en uso")
-	errNotPost             = errors.New("no hay posts")
 )
 
 func main() {
@@ -133,11 +132,13 @@ func loopIntoProfile(u user, exit *bool) {
 
 	fmt.Println("1.Ver Tus Posts")
 	fmt.Println("2.Ver Todos Los Posts")
-	fmt.Println("3.Eliminar Cuenta")
+	fmt.Println("3.Añadir Un Post")
+	fmt.Println("4.Eliminar Un Post")
+	fmt.Println("5.Eliminar Cuenta")
 	fmt.Println("0.Salir")
 	fmt.Println()
 
-	fmt.Print(">")
+	fmt.Print("> ")
 
 	fmt.Scan(&election)
 
@@ -148,17 +149,71 @@ func loopIntoProfile(u user, exit *bool) {
 		*exit = true
 	case 1:
 
-		posts, err := getMyPosts(u)
+		posts, err := getPosts(u, "http://localhost:8080/user/post/one")
 
 		if err != nil {
 			log.Fatal(err)
+		}
+
+		if len(posts) == 0 {
+			fmt.Printf("No tienes ningun Post aun\n")
+			return
 		}
 
 		printMyPosts(posts)
 
 	case 2:
 
+		posts, err := getPosts(u, "http://localhost:8080/user/post/all")
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if len(posts) == 0 {
+			fmt.Printf("Tus amigos no han publicado ningun post\n")
+			return
+		}
+
+		printMyPosts(posts)
+
 	case 3:
+
+		var post string
+
+		fmt.Println("Escribe lo que deseas publicar")
+
+		fmt.Print("> ")
+
+		fmt.Scan(&post)
+
+		err := addPost(post, u)
+
+		if err != nil {
+			if err != io.EOF {
+				log.Fatal(err)
+			}
+		}
+
+	case 4:
+
+		var postID int
+
+		fmt.Println("Escribe el ID del post que deseas eliminar")
+
+		fmt.Print("> ")
+
+		fmt.Scan(&postID)
+
+		err := deletePost(u, postID)
+
+		if err != nil {
+			if err != io.EOF {
+				log.Fatal(err)
+			}
+		}
+
+	case 5:
 
 		var security string
 
@@ -385,7 +440,7 @@ func deleteUser(u user) (err error) {
 
 }
 
-func getMyPosts(u user) (posts []post, err error) {
+func getPosts(u user, stringURL string) (posts []post, err error) {
 
 	var p page
 
@@ -401,7 +456,7 @@ func getMyPosts(u user) (posts []post, err error) {
 
 	buf := bytes.NewBuffer(dataJSON)
 
-	req, err := http.NewRequest("GET", "http://localhost:8080/user/post/one", buf)
+	req, err := http.NewRequest("GET", stringURL, buf)
 
 	if err != nil {
 		return
@@ -429,11 +484,6 @@ func getMyPosts(u user) (posts []post, err error) {
 		return
 	}
 
-	if len(p.Posts) == 0 {
-		fmt.Printf("No tienes ningun Post aun\n")
-		return
-	}
-
 	posts = p.Posts
 
 	return
@@ -441,12 +491,121 @@ func getMyPosts(u user) (posts []post, err error) {
 
 func printMyPosts(posts []post) {
 
-	fmt.Printf("\nTus Posts:\n")
+	fmt.Printf("\nPosts:\n")
 
 	for i := range posts {
 
-		fmt.Printf("%s: %s - %s\n", posts[i].Propetary, posts[i].Contet, posts[i].Date)
+		fmt.Printf("%d.%s: %s - %s\n", posts[i].ID, posts[i].Propetary, posts[i].Content, posts[i].Date)
 
 	}
 	fmt.Println()
+}
+
+func addPost(po string, u user) (err error) {
+
+	var p page
+
+	client := &http.Client{
+		Timeout: time.Second * 20,
+	}
+
+	p = page{
+		User:  u,
+		Posts: []post{{Content: po}},
+	}
+
+	dataJSON, err := json.Marshal(p)
+
+	if err != nil {
+		return
+	}
+
+	buf := bytes.NewBuffer(dataJSON)
+
+	req, err := http.NewRequest("POST", "http://localhost:8080/user/post/add", buf)
+
+	if err != nil {
+		return
+	}
+
+	res, err := client.Do(req)
+
+	if err != nil {
+		return
+	}
+
+	defer res.Body.Close()
+
+	err = json.NewDecoder(res.Body).Decode(&p)
+
+	if err != nil {
+		if err != io.EOF {
+			return
+		}
+	}
+
+	if p.Err != "" {
+		fmt.Printf("\nERROR: %s\n", p.Err)
+		err = nil
+		return
+	}
+
+	fmt.Printf("\nSe publico tu post con exito\n")
+
+	return
+}
+
+func deletePost(u user, postID int) (err error) {
+
+	var p page
+
+	client := &http.Client{
+		Timeout: time.Second * 20,
+	}
+
+	p = page{
+		User:  u,
+		Posts: []post{{ID: postID}},
+	}
+
+	dataJSON, err := json.Marshal(p)
+
+	if err != nil {
+		return
+	}
+
+	buf := bytes.NewBuffer(dataJSON)
+
+	req, err := http.NewRequest("DELETE", "http://localhost:8080/user/post/delete", buf)
+
+	if err != nil {
+		return
+	}
+
+	res, err := client.Do(req)
+
+	if err != nil {
+		return
+	}
+
+	defer res.Body.Close()
+
+	err = json.NewDecoder(res.Body).Decode(&p)
+
+	if err != nil {
+		if err != io.EOF {
+			return
+		}
+	}
+
+	if p.Err != "" {
+		fmt.Printf("\nERROR: %s\n", p.Err)
+		err = nil
+		return
+	}
+
+	fmt.Printf("\nSe eliminó tu post con exito\n")
+
+	return
+
 }

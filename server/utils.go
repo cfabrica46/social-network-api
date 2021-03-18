@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"io"
+	"log"
 	"os"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -136,7 +137,7 @@ func deleteUserIntoDatabases(u user) (err error) {
 
 func obtainMyPosts(u user) (posts []post, err error) {
 
-	rows, err := db.d.Query("SELECT users.username,posts.content,posts.date FROM users_posts INNER JOIN users ON users_posts.userID = users.id INNER JOIN posts ON users_posts.postID = posts.id WHERE users.id = ? ORDER BY posts.date DESC", u.ID)
+	rows, err := db.d.Query("SELECT posts.id,users.username,posts.content,posts.date FROM users_posts INNER JOIN users ON users_posts.userID = users.id INNER JOIN posts ON users_posts.postID = posts.id WHERE users.id = ? ORDER BY posts.date DESC", u.ID)
 
 	if err != nil {
 		return
@@ -148,10 +149,120 @@ func obtainMyPosts(u user) (posts []post, err error) {
 
 		var postAux post
 
-		rows.Scan(&postAux.Propetary, &postAux.Contet, &postAux.Date)
+		rows.Scan(&postAux.ID, &postAux.Propetary, &postAux.Content, &postAux.Date)
 
 		posts = append(posts, postAux)
 	}
 
 	return
+}
+
+func obtainAllFriendsPosts(u user) (posts []post, err error) {
+
+	idFriends, err := obtainIDFriends(u)
+
+	if err != nil {
+		return
+	}
+
+	for i := range idFriends {
+
+		var rows *sql.Rows
+
+		rows, err = db.d.Query("SELECT posts.id,users.username,posts.content,posts.date FROM users_posts INNER JOIN users ON users_posts.userID = users.id INNER JOIN posts ON users_posts.postID = posts.id WHERE users.id = ? ORDER BY posts.date DESC", idFriends[i])
+
+		if err != nil {
+			return
+		}
+
+		defer rows.Close()
+
+		for rows.Next() {
+
+			var postAux post
+
+			rows.Scan(&postAux.ID, &postAux.Propetary, &postAux.Content, &postAux.Date)
+
+			posts = append(posts, postAux)
+		}
+
+	}
+
+	return
+}
+
+func obtainIDFriends(u user) (idFriends []int, err error) {
+
+	rows, err := db.d.Query("SELECT id1,id2 FROM friends WHERE id1=? OR  id2=?", u.ID, u.ID)
+
+	if err != nil {
+		return
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+
+		var id1, id2 int
+
+		rows.Scan(&id1, &id2)
+
+		if id1 != u.ID {
+			idFriends = append(idFriends, id1)
+		} else {
+			idFriends = append(idFriends, id2)
+		}
+
+	}
+
+	return
+}
+
+func insertPostIntoDatabases(post string, userID int) (err error) {
+
+	stmt, err := db.d.Prepare("INSERT INTO posts(content,date) VALUES (?,datetime('now','localtime'))")
+
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	res, err := stmt.Exec(post)
+
+	if err != nil {
+		log.Fatal(err)
+
+		return
+	}
+
+	id, err := res.LastInsertId()
+
+	if err != nil {
+		log.Fatal(err)
+
+		return
+	}
+
+	postID := int(id)
+
+	insertPostPivote(postID, userID)
+
+	return
+
+}
+
+func insertPostPivote(postID, userID int) {
+
+	stmt, err := db.d.Prepare("INSERT INTO users_posts(userID,postID) VALUES (?,?)")
+
+	if err != nil {
+		return
+	}
+
+	_, err = stmt.Exec(userID, postID)
+
+	if err != nil {
+		return
+	}
+
 }

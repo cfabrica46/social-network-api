@@ -30,7 +30,7 @@ type user struct {
 type post struct {
 	Propetary string
 	ID        int
-	Contet    string
+	Content   string
 	Date      string
 }
 
@@ -58,6 +58,9 @@ func main() {
 	http.HandleFunc("/user/create", db.createUser)
 	http.HandleFunc("/user/delete", db.deleteUser)
 	http.HandleFunc("/user/post/one", db.getMyPosts)
+	http.HandleFunc("/user/post/all", db.getAllFriendsPosts)
+	http.HandleFunc("/user/post/add", db.addPost)
+	http.HandleFunc("/user/post/delete", db.deletePost)
 
 	fmt.Println("Listening on 8080")
 

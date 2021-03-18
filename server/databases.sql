@@ -45,7 +45,8 @@ INSERT INTO users(username, password)
     VALUES
         ('cfabrica46',  '01234'),
         ('arturo',      '12345'),
-        ('luis',        'lolsito123');
+        ('luis',        'lolsito123'),
+        ('jose',        'asdasd');
 
 INSERT INTO friends(id1,id2)
     VALUES
@@ -57,7 +58,8 @@ INSERT INTO posts(content,date)
         ("HOLIIIIII",   datetime('now','localtime')),
         ("HOLA :D",     datetime('now','localtime')),
         ("UWU",         datetime('now','localtime')),
-        (">:V",         datetime('now','localtime'));
+        (">:V",         datetime('now','localtime')),
+        ("owo",         datetime('now','localtime'));
 
 INSERT INTO users_posts(userID,postID)
     VALUES
