@@ -54,15 +54,15 @@ func open() (databases *sql.DB, err error) {
 	if err != nil {
 		if os.IsNotExist(err) {
 
-			databases, err := migracion()
+			databases, err = migracion()
 
 			if err != nil {
 
 				archivo.Close()
-				return databases, err
+				return
 			}
 
-			return databases, err
+			return
 		}
 		return
 	}
