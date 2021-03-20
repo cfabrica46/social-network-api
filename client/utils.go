@@ -2,6 +2,17 @@ package main
 
 import "fmt"
 
+func getUser() (user User, err error) {
+
+	fmt.Printf("\nINGRESA TUS DATOS\n")
+	fmt.Printf("Username: ")
+	fmt.Scan(&user.Username)
+	fmt.Printf("Password: ")
+	fmt.Scan(&user.Password)
+
+	return
+}
+
 func printFriends(friends []User) {
 
 	fmt.Println("Tus amigos:")

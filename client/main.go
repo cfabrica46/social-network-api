@@ -54,7 +54,7 @@ func main() {
 
 		case 1:
 
-			u, err := login()
+			u, err := getUser()
 
 			if err != nil {
 				log.Fatal(err)
@@ -76,7 +76,7 @@ func main() {
 			}
 		case 2:
 
-			u, err := login()
+			u, err := getUser()
 
 			if err != nil {
 				log.Fatal(err)
@@ -141,7 +141,7 @@ func loopIntoProfile(u User, exit *bool) {
 		*exit = true
 	case 1:
 
-		posts, err := getPosts(u, "http://localhost:8080/user/post/one")
+		posts, err := getPosts(u, "http://localhost:8080/user/posts")
 
 		if err != nil {
 			log.Fatal(err)
@@ -156,7 +156,7 @@ func loopIntoProfile(u User, exit *bool) {
 
 	case 2:
 
-		posts, err := getPosts(u, "http://localhost:8080/user/post/all")
+		posts, err := getPosts(u, "http://localhost:8080/user/friends/posts")
 
 		if err != nil {
 			log.Fatal(err)

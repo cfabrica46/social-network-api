@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	"io"
 	"os"
 
@@ -262,8 +261,6 @@ func insertPostIntoDatabases(post string, userID int) (err error) {
 
 func insertPostPivote(postID, userID int) (err error) {
 
-	fmt.Println(postID, userID)
-
 	stmt, err := db.d.Prepare("INSERT INTO users_posts(user_ID,post_ID) VALUES (?,?)")
 
 	if err != nil {
@@ -328,7 +325,7 @@ func checkIfMyFriendExist(id int, userID int) (check bool, err error) {
 
 	var id1, id2 int
 
-	row := db.d.QueryRow("SELECT id1,id2 FROM friends WHERE id1 = ? AND id2 = ? OR id1 = ? AND id2 = ? ", id, userID, userID, id)
+	row := db.d.QueryRow("SELECT id1,id2 FROM friends WHERE (id1 = ? AND id2 = ?) OR (id1 = ? AND id2 = ?) ", id, userID, userID, id)
 
 	err = row.Scan(&id1, &id2)
 

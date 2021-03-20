@@ -3,11 +3,10 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"net/http"
 )
 
-func (d *dataBases) profile(w http.ResponseWriter, r *http.Request) {
+func (d *dataBases) user(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case "GET":
@@ -25,7 +24,7 @@ func (d *dataBases) profile(w http.ResponseWriter, r *http.Request) {
 
 		if err != nil {
 			if err == sql.ErrNoRows {
-				json.NewEncoder(w).Encode(http.StatusText(http.StatusNotFound))
+				json.NewEncoder(w).Encode(http.StatusText(http.StatusNetworkAuthenticationRequired))
 				return
 			}
 			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
@@ -39,13 +38,6 @@ func (d *dataBases) profile(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-	}
-
-}
-
-func (d *dataBases) createUser(w http.ResponseWriter, r *http.Request) {
-
-	switch r.Method {
 	case "POST":
 
 		var userBeta User
@@ -60,10 +52,12 @@ func (d *dataBases) createUser(w http.ResponseWriter, r *http.Request) {
 		_, err = getUser(userBeta)
 
 		if err != nil {
-			if err != sql.ErrNoRows {
-				json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			if err == sql.ErrNoRows {
+				json.NewEncoder(w).Encode(http.StatusText(http.StatusNetworkAuthenticationRequired))
 				return
 			}
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			return
 		}
 
 		err = insertIntoDatabase(&userBeta)
@@ -80,13 +74,6 @@ func (d *dataBases) createUser(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-	}
-
-}
-
-func (d *dataBases) deleteUser(w http.ResponseWriter, r *http.Request) {
-
-	switch r.Method {
 	case "DELETE":
 
 		var userBeta User
@@ -101,10 +88,12 @@ func (d *dataBases) deleteUser(w http.ResponseWriter, r *http.Request) {
 		u, err := getUser(userBeta)
 
 		if err != nil {
-			if err != sql.ErrNoRows {
-				json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			if err == sql.ErrNoRows {
+				json.NewEncoder(w).Encode(http.StatusText(http.StatusNetworkAuthenticationRequired))
 				return
 			}
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			return
 		}
 
 		err = deleteUserIntoDatabases(u)
@@ -120,14 +109,15 @@ func (d *dataBases) deleteUser(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 			return
 		}
-
 	}
 
 }
 
-func (d dataBases) getMyPosts(w http.ResponseWriter, r *http.Request) {
+func (d dataBases) myPosts(w http.ResponseWriter, r *http.Request) {
 
-	if r.Method == "GET" {
+	switch r.Method {
+
+	case "GET":
 
 		var userBeta User
 
@@ -141,10 +131,12 @@ func (d dataBases) getMyPosts(w http.ResponseWriter, r *http.Request) {
 		_, err = getUser(userBeta)
 
 		if err != nil {
-			if err != sql.ErrNoRows {
-				json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			if err == sql.ErrNoRows {
+				json.NewEncoder(w).Encode(http.StatusText(http.StatusNetworkAuthenticationRequired))
 				return
 			}
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			return
 		}
 
 		posts, err := obtainMyPosts(userBeta)
@@ -161,51 +153,7 @@ func (d dataBases) getMyPosts(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-	}
-}
-
-func (d dataBases) getAllFriendsPosts(w http.ResponseWriter, r *http.Request) {
-
-	if r.Method == "GET" {
-
-		var userBeta User
-
-		err := json.NewDecoder(r.Body).Decode(&userBeta)
-
-		if err != nil {
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
-			return
-		}
-
-		_, err = getUser(userBeta)
-
-		if err != nil {
-			if err != sql.ErrNoRows {
-				json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
-				return
-			}
-		}
-
-		posts, err := obtainAllFriendsPosts(userBeta)
-
-		if err != nil {
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
-			return
-		}
-
-		err = json.NewEncoder(w).Encode(posts)
-
-		if err != nil {
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
-			return
-		}
-
-	}
-}
-
-func (d dataBases) addPost(w http.ResponseWriter, r *http.Request) {
-
-	if r.Method == "POST" {
+	case "POST":
 
 		data := struct {
 			User
@@ -219,18 +167,16 @@ func (d dataBases) addPost(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		fmt.Println(data)
-
 		u, err := getUser(data.User)
 
 		if err != nil {
-			if err != sql.ErrNoRows {
-				json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			if err == sql.ErrNoRows {
+				json.NewEncoder(w).Encode(http.StatusText(http.StatusNetworkAuthenticationRequired))
 				return
 			}
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			return
 		}
-
-		fmt.Println(data.Post.Content)
 
 		err = insertPostIntoDatabases(data.Post.Content, u.ID)
 
@@ -246,13 +192,7 @@ func (d dataBases) addPost(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-	}
-
-}
-
-func (d dataBases) deletePost(w http.ResponseWriter, r *http.Request) {
-
-	if r.Method == "DELETE" {
+	case "DELETE":
 
 		data := struct {
 			User
@@ -269,10 +209,12 @@ func (d dataBases) deletePost(w http.ResponseWriter, r *http.Request) {
 		_, err = getUser(data.User)
 
 		if err != nil {
-			if err != sql.ErrNoRows {
-				json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			if err == sql.ErrNoRows {
+				json.NewEncoder(w).Encode(http.StatusText(http.StatusNetworkAuthenticationRequired))
 				return
 			}
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			return
 		}
 
 		check, err := checkIfMyPostExist(data.Post.ID, data.User.ID)
@@ -302,12 +244,10 @@ func (d dataBases) deletePost(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 			return
 		}
-
 	}
-
 }
 
-func (d dataBases) showFriends(w http.ResponseWriter, r *http.Request) {
+func (d dataBases) friendsPosts(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "GET" {
 
@@ -323,10 +263,55 @@ func (d dataBases) showFriends(w http.ResponseWriter, r *http.Request) {
 		_, err = getUser(userBeta)
 
 		if err != nil {
-			if err != sql.ErrNoRows {
-				json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			if err == sql.ErrNoRows {
+				json.NewEncoder(w).Encode(http.StatusText(http.StatusNetworkAuthenticationRequired))
 				return
 			}
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			return
+		}
+
+		posts, err := obtainAllFriendsPosts(userBeta)
+
+		if err != nil {
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			return
+		}
+
+		err = json.NewEncoder(w).Encode(posts)
+
+		if err != nil {
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			return
+		}
+
+	}
+}
+
+func (d dataBases) friends(w http.ResponseWriter, r *http.Request) {
+
+	switch r.Method {
+
+	case "GET":
+
+		var userBeta User
+
+		err := json.NewDecoder(r.Body).Decode(&userBeta)
+
+		if err != nil {
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			return
+		}
+
+		_, err = getUser(userBeta)
+
+		if err != nil {
+			if err == sql.ErrNoRows {
+				json.NewEncoder(w).Encode(http.StatusText(http.StatusNetworkAuthenticationRequired))
+				return
+			}
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			return
 		}
 
 		friends, err := obtainAllFriends(userBeta)
@@ -343,13 +328,7 @@ func (d dataBases) showFriends(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-	}
-
-}
-
-func (d dataBases) addFriend(w http.ResponseWriter, r *http.Request) {
-
-	if r.Method == "POST" {
+	case "POST":
 
 		data := struct {
 			User
@@ -366,10 +345,12 @@ func (d dataBases) addFriend(w http.ResponseWriter, r *http.Request) {
 		_, err = getUser(data.User)
 
 		if err != nil {
-			if err != sql.ErrNoRows {
-				json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			if err == sql.ErrNoRows {
+				json.NewEncoder(w).Encode(http.StatusText(http.StatusNetworkAuthenticationRequired))
 				return
 			}
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			return
 		}
 
 		check, err := checkIfMyFriendExist(data.Friend.ID, data.User.ID)
@@ -400,12 +381,7 @@ func (d dataBases) addFriend(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-	}
-}
-
-func (d dataBases) deleteFriend(w http.ResponseWriter, r *http.Request) {
-
-	if r.Method == "DELETE" {
+	case "DELETE":
 
 		data := struct {
 			User
@@ -422,10 +398,12 @@ func (d dataBases) deleteFriend(w http.ResponseWriter, r *http.Request) {
 		_, err = getUser(data.User)
 
 		if err != nil {
-			if err != sql.ErrNoRows {
-				json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			if err == sql.ErrNoRows {
+				json.NewEncoder(w).Encode(http.StatusText(http.StatusNetworkAuthenticationRequired))
 				return
 			}
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			return
 		}
 
 		check, err := checkIfMyFriendExist(data.Friend.ID, data.User.ID)
@@ -455,7 +433,6 @@ func (d dataBases) deleteFriend(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 			return
 		}
-
 	}
 
 }

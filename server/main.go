@@ -39,16 +39,13 @@ func main() {
 		d: databases,
 	}
 
-	http.HandleFunc("/user/profile", db.profile)
-	http.HandleFunc("/user/create", db.createUser)
-	http.HandleFunc("/user/delete", db.deleteUser)
-	http.HandleFunc("/user/post/one", db.getMyPosts)
-	http.HandleFunc("/user/post/all", db.getAllFriendsPosts)
-	http.HandleFunc("/user/post/add", db.addPost)
-	http.HandleFunc("/user/post/delete", db.deletePost)
-	http.HandleFunc("/user/friends/show", db.showFriends)
-	http.HandleFunc("/user/friends/add", db.addFriend)
-	http.HandleFunc("/user/friends/delete", db.deleteFriend)
+	http.HandleFunc("/user", db.user)
+
+	http.HandleFunc("/user/posts", db.myPosts)
+
+	http.HandleFunc("/user/friends", db.friends)
+
+	http.HandleFunc("/user/friends/posts", db.friendsPosts)
 
 	fmt.Println("Listening on 8080")
 

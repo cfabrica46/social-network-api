@@ -9,17 +9,6 @@ import (
 	"time"
 )
 
-func login() (user User, err error) {
-
-	fmt.Printf("\nINGRESA TUS DATOS\n")
-	fmt.Printf("Username: ")
-	fmt.Scan(&user.Username)
-	fmt.Printf("Password: ")
-	fmt.Scan(&user.Password)
-
-	return
-}
-
 func profileGET(u *User) (check bool, err error) {
 
 	var userAux User
@@ -37,7 +26,7 @@ func profileGET(u *User) (check bool, err error) {
 
 	buf := bytes.NewBuffer(dataJSON)
 
-	req, err := http.NewRequest("GET", "http://localhost:8080/user/profile", buf)
+	req, err := http.NewRequest("GET", "http://localhost:8080/user", buf)
 
 	if err != nil {
 		return
@@ -102,7 +91,7 @@ func createUser(u *User) (err error) {
 
 	buf := bytes.NewBuffer(dataJSON)
 
-	req, err := http.NewRequest("POST", "http://localhost:8080/user/create", buf)
+	req, err := http.NewRequest("POST", "http://localhost:8080/user", buf)
 
 	if err != nil {
 		return
@@ -167,7 +156,7 @@ func deleteUser(u User) (err error) {
 
 	buf := bytes.NewBuffer(dataJSON)
 
-	req, err := http.NewRequest("DELETE", "http://localhost:8080/user/delete", buf)
+	req, err := http.NewRequest("DELETE", "http://localhost:8080/user", buf)
 
 	if err != nil {
 		return
@@ -303,7 +292,7 @@ func addPost(postContent string, u User) (err error) {
 
 	buf := bytes.NewBuffer(dataJSON)
 
-	req, err := http.NewRequest("POST", "http://localhost:8080/user/post/add", buf)
+	req, err := http.NewRequest("POST", "http://localhost:8080/user/posts", buf)
 
 	if err != nil {
 		return
@@ -375,7 +364,7 @@ func deletePost(u User, postID int) (err error) {
 
 	buf := bytes.NewBuffer(dataJSON)
 
-	req, err := http.NewRequest("DELETE", "http://localhost:8080/user/post/delete", buf)
+	req, err := http.NewRequest("DELETE", "http://localhost:8080/user/posts", buf)
 
 	if err != nil {
 		return
@@ -439,7 +428,7 @@ func getFriends(u User) (friends []User, err error) {
 
 	buf := bytes.NewBuffer(dataJSON)
 
-	req, err := http.NewRequest("GET", "http://localhost:8080/user/friends/show", buf)
+	req, err := http.NewRequest("GET", "http://localhost:8080/user/friends", buf)
 
 	if err != nil {
 		return
@@ -509,7 +498,7 @@ func addFriend(u User, friendID int) (err error) {
 
 	buf := bytes.NewBuffer(dataJSON)
 
-	req, err := http.NewRequest("POST", "http://localhost:8080/user/friends/add", buf)
+	req, err := http.NewRequest("POST", "http://localhost:8080/user/friends", buf)
 
 	if err != nil {
 		return
@@ -582,7 +571,7 @@ func deleteFriend(u User, friendID int) (err error) {
 
 	buf := bytes.NewBuffer(dataJSON)
 
-	req, err := http.NewRequest("DELETE", "http://localhost:8080/user/friends/delete", buf)
+	req, err := http.NewRequest("DELETE", "http://localhost:8080/user/friends", buf)
 
 	if err != nil {
 		return
