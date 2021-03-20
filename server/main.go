@@ -7,28 +7,12 @@ import (
 	"net/http"
 )
 
-const (
-	login    = "login"
-	register = "register"
-	userName = "Username"
-	passWord = "Password"
-)
-
-type page struct {
-	Title   string
-	Options []string
-	User    user
-	Friends []user
-	Posts   []post
-	Err     string
-}
-
-type user struct {
+type User struct {
 	ID                 int
 	Username, Password string
 }
 
-type post struct {
+type Post struct {
 	Propetary string
 	ID        int
 	Content   string

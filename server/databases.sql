@@ -26,15 +26,15 @@ CREATE TABLE IF NOT EXISTS posts(
 );
 
 CREATE TABLE IF NOT EXISTS users_posts(
-    userID INTEGER NOT NULL,
-    postID INTEGER NOT NULL,
+    user_ID INTEGER NOT NULL,
+    post_ID INTEGER NOT NULL,
 
-    FOREIGN KEY(userID)
+    FOREIGN KEY(user_ID)
         REFERENCES users(id)
             ON UPDATE CASCADE
             ON DELETE CASCADE,
     
-    FOREIGN KEY(postID)
+    FOREIGN KEY(post_ID)
         REFERENCES posts(id)
             ON UPDATE CASCADE
             ON DELETE CASCADE
@@ -61,9 +61,10 @@ INSERT INTO posts(content,date)
         (">:V",         datetime('now','localtime')),
         ("owo",         datetime('now','localtime'));
 
-INSERT INTO users_posts(userID,postID)
+INSERT INTO users_posts(user_ID,post_ID)
     VALUES
         (1,1),
         (1,3),
         (2,2),
-        (3,4);
+        (3,4),
+        (4,5);

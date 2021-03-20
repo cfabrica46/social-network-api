@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -10,31 +9,17 @@ import (
 	"strings"
 )
 
-type page struct {
-	Title   string
-	Options []string
-	User    user
-	Friends []user
-	Posts   []post
-	Err     string
-}
-
-type user struct {
+type User struct {
 	ID                 int
 	Username, Password string
 }
 
-type post struct {
+type Post struct {
 	Propetary string
 	ID        int
 	Content   string
 	Date      string
 }
-
-var (
-	errNotAccept           = errors.New("username o password incorrectas")
-	errUsernameAlreadyUsed = errors.New("username ya en uso")
-)
 
 func main() {
 
@@ -69,50 +54,53 @@ func main() {
 
 		case 1:
 
-			u, err := login("http://localhost:8080/user/profile")
+			u, err := login()
 
 			if err != nil {
 				log.Fatal(err)
 			}
 
-			err = profileGET(&u)
+			c, err := profileGET(&u)
 
 			if err != nil {
 				log.Fatal(err)
 			}
 
-			for !exit {
+			if c {
 
-				loopIntoProfile(u, &exit)
+				for !exit {
 
+					loopIntoProfile(u, &exit)
+
+				}
 			}
-
 		case 2:
 
-			u, err := login("http://localhost:8080/user/create")
+			u, err := login()
 
 			if err != nil {
 				log.Fatal(err)
 			}
 
-			err = createUserPOST(&u)
+			err = createUser(&u)
 
 			if err != nil {
 				log.Fatal(err)
 			}
 
-			err = profileGET(&u)
+			c, err := profileGET(&u)
 
 			if err != nil {
 				log.Fatal(err)
 			}
 
-			for !exit {
+			if c {
+				for !exit {
 
-				loopIntoProfile(u, &exit)
+					loopIntoProfile(u, &exit)
 
+				}
 			}
-
 		default:
 
 			fmt.Println("Seleccione una opción válida")
@@ -122,15 +110,17 @@ func main() {
 	}
 }
 
-func loopIntoProfile(u user, exit *bool) {
+func loopIntoProfile(u User, exit *bool) {
 
 	var election int
 
+	fmt.Println()
+	fmt.Printf("Bienvenido %s\n", u.Username)
 	fmt.Println("¿Qué deseas hacer?")
 	fmt.Println()
 
 	fmt.Println("1.Ver Tus Posts")
-	fmt.Println("2.Ver Todos Los Posts")
+	fmt.Println("2.Ver Todos Los Posts De Tus Amigos")
 	fmt.Println("3.Añadir Un Post")
 	fmt.Println("4.Eliminar Un Post")
 	fmt.Println("5.Mostrar Amigos")

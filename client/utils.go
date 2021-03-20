@@ -2,7 +2,7 @@ package main
 
 import "fmt"
 
-func printFriends(friends []user) {
+func printFriends(friends []User) {
 
 	fmt.Println("Tus amigos:")
 
@@ -15,7 +15,7 @@ func printFriends(friends []user) {
 
 }
 
-func printMyPosts(posts []post) {
+func printMyPosts(posts []Post) {
 
 	fmt.Printf("\nPosts:\n")
 

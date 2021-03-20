@@ -3,36 +3,21 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
-	"log"
+	"fmt"
 	"net/http"
 )
 
 func (d *dataBases) profile(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
-	case "CONNECT":
-
-		p := page{
-			Title:   "Ingrese sus Datos",
-			Options: []string{userName, passWord},
-		}
-
-		err := json.NewEncoder(w).Encode(p)
-
-		if err != nil {
-			p.Err = http.StatusText(http.StatusInternalServerError)
-			return
-		}
-
 	case "GET":
 
-		var userBeta user
-		var p page
+		var userBeta User
 
 		err := json.NewDecoder(r.Body).Decode(&userBeta)
 
 		if err != nil {
-			p.Err = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 			return
 		}
 
@@ -40,26 +25,17 @@ func (d *dataBases) profile(w http.ResponseWriter, r *http.Request) {
 
 		if err != nil {
 			if err == sql.ErrNoRows {
-				p.Err = http.StatusText(http.StatusNotFound)
-				json.NewEncoder(w).Encode(p)
+				json.NewEncoder(w).Encode(http.StatusText(http.StatusNotFound))
 				return
 			}
-			log.Fatal(err)
-
-			p.Err = http.StatusText(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(p)
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 			return
 		}
 
-		p = page{
-			Title: "Mi Perfil",
-			User:  u,
-		}
-
-		err = json.NewEncoder(w).Encode(p)
+		err = json.NewEncoder(w).Encode(u)
 
 		if err != nil {
-			p.Err = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 			return
 		}
 
@@ -70,29 +46,14 @@ func (d *dataBases) profile(w http.ResponseWriter, r *http.Request) {
 func (d *dataBases) createUser(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
-	case "CONNECT":
-
-		p := page{
-			Title:   "Ingrese sus Datos",
-			Options: []string{userName, passWord},
-		}
-
-		err := json.NewEncoder(w).Encode(p)
-
-		if err != nil {
-			p.Err = http.StatusText(http.StatusInternalServerError)
-			return
-		}
-
 	case "POST":
 
-		var userBeta user
-		var p page
+		var userBeta User
 
 		err := json.NewDecoder(r.Body).Decode(&userBeta)
 
 		if err != nil {
-			p.Err = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 			return
 		}
 
@@ -100,8 +61,7 @@ func (d *dataBases) createUser(w http.ResponseWriter, r *http.Request) {
 
 		if err != nil {
 			if err != sql.ErrNoRows {
-				p.Err = http.StatusText(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(p)
+				json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 				return
 			}
 		}
@@ -109,21 +69,14 @@ func (d *dataBases) createUser(w http.ResponseWriter, r *http.Request) {
 		err = insertIntoDatabase(&userBeta)
 
 		if err != nil {
-			p.Err = http.StatusText(http.StatusLocked)
-			json.NewEncoder(w).Encode(p)
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusLocked))
 			return
 		}
 
-		p = page{
-			Title: "Nuevo Usuario",
-			User:  userBeta,
-		}
-
-		err = json.NewEncoder(w).Encode(p)
+		err = json.NewEncoder(w).Encode(userBeta)
 
 		if err != nil {
-			p.Err = http.StatusText(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(p)
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 			return
 		}
 
@@ -136,13 +89,12 @@ func (d *dataBases) deleteUser(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "DELETE":
 
-		var p page
-		var userBeta user
+		var userBeta User
 
 		err := json.NewDecoder(r.Body).Decode(&userBeta)
 
 		if err != nil {
-			p.Err = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 			return
 		}
 
@@ -150,8 +102,7 @@ func (d *dataBases) deleteUser(w http.ResponseWriter, r *http.Request) {
 
 		if err != nil {
 			if err != sql.ErrNoRows {
-				p.Err = http.StatusText(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(p)
+				json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 				return
 			}
 		}
@@ -159,18 +110,14 @@ func (d *dataBases) deleteUser(w http.ResponseWriter, r *http.Request) {
 		err = deleteUserIntoDatabases(u)
 
 		if err != nil {
-			p.Err = http.StatusText(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(p)
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			return
 		}
 
-		p = page{
-			Title: "Se eliminó la cuenta con éxito",
-		}
-
-		err = json.NewEncoder(w).Encode(p)
+		err = json.NewEncoder(w).Encode(u)
 
 		if err != nil {
-			p.Err = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 			return
 		}
 
@@ -182,13 +129,12 @@ func (d dataBases) getMyPosts(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "GET" {
 
-		var p page
-		var userBeta user
+		var userBeta User
 
 		err := json.NewDecoder(r.Body).Decode(&userBeta)
 
 		if err != nil {
-			p.Err = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 			return
 		}
 
@@ -196,8 +142,7 @@ func (d dataBases) getMyPosts(w http.ResponseWriter, r *http.Request) {
 
 		if err != nil {
 			if err != sql.ErrNoRows {
-				p.Err = http.StatusText(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(p)
+				json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 				return
 			}
 		}
@@ -205,19 +150,14 @@ func (d dataBases) getMyPosts(w http.ResponseWriter, r *http.Request) {
 		posts, err := obtainMyPosts(userBeta)
 
 		if err != nil {
-			p.Err = http.StatusText(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(p)
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 			return
 		}
 
-		p = page{
-			Posts: posts,
-		}
-
-		err = json.NewEncoder(w).Encode(p)
+		err = json.NewEncoder(w).Encode(posts)
 
 		if err != nil {
-			p.Err = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 			return
 		}
 
@@ -228,13 +168,12 @@ func (d dataBases) getAllFriendsPosts(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "GET" {
 
-		var p page
-		var userBeta user
+		var userBeta User
 
 		err := json.NewDecoder(r.Body).Decode(&userBeta)
 
 		if err != nil {
-			p.Err = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 			return
 		}
 
@@ -242,8 +181,7 @@ func (d dataBases) getAllFriendsPosts(w http.ResponseWriter, r *http.Request) {
 
 		if err != nil {
 			if err != sql.ErrNoRows {
-				p.Err = http.StatusText(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(p)
+				json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 				return
 			}
 		}
@@ -251,19 +189,14 @@ func (d dataBases) getAllFriendsPosts(w http.ResponseWriter, r *http.Request) {
 		posts, err := obtainAllFriendsPosts(userBeta)
 
 		if err != nil {
-			p.Err = http.StatusText(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(p)
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 			return
 		}
 
-		p = page{
-			Posts: posts,
-		}
-
-		err = json.NewEncoder(w).Encode(p)
+		err = json.NewEncoder(w).Encode(posts)
 
 		if err != nil {
-			p.Err = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 			return
 		}
 
@@ -274,36 +207,42 @@ func (d dataBases) addPost(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "POST" {
 
-		var p page
+		data := struct {
+			User
+			Post
+		}{}
 
-		err := json.NewDecoder(r.Body).Decode(&p)
+		err := json.NewDecoder(r.Body).Decode(&data)
 
 		if err != nil {
-			p.Err = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 			return
 		}
 
-		_, err = getUser(p.User)
+		fmt.Println(data)
+
+		u, err := getUser(data.User)
 
 		if err != nil {
 			if err != sql.ErrNoRows {
-				p.Err = http.StatusText(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(p)
+				json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 				return
 			}
 		}
 
-		err = insertPostIntoDatabases(p.Posts[0].Content, p.User.ID)
+		fmt.Println(data.Post.Content)
+
+		err = insertPostIntoDatabases(data.Post.Content, u.ID)
 
 		if err != nil {
-			p.Err = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 			return
 		}
 
-		err = json.NewEncoder(w).Encode(p)
+		err = json.NewEncoder(w).Encode(data.Post)
 
 		if err != nil {
-			p.Err = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 			return
 		}
 
@@ -315,52 +254,52 @@ func (d dataBases) deletePost(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "DELETE" {
 
-		var p page
+		data := struct {
+			User
+			Post
+		}{}
 
-		err := json.NewDecoder(r.Body).Decode(&p)
+		err := json.NewDecoder(r.Body).Decode(&data)
 
 		if err != nil {
-			p.Err = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 			return
 		}
 
-		_, err = getUser(p.User)
+		_, err = getUser(data.User)
 
 		if err != nil {
 			if err != sql.ErrNoRows {
-				p.Err = http.StatusText(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(p)
+				json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 				return
 			}
 		}
 
-		check, err := checkIfMyPostExist(p.Posts[0].ID, p.User.ID)
+		check, err := checkIfMyPostExist(data.Post.ID, data.User.ID)
 
 		if err != nil {
 			if err != sql.ErrNoRows {
-				p.Err = http.StatusText(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(p)
+				json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 				return
 			}
 		}
 
 		if !check {
-			p.Err = http.StatusText(http.StatusSeeOther)
-			json.NewEncoder(w).Encode(p)
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusSeeOther))
 			return
 		}
 
-		err = deletePostFromDatabases(p.Posts[0].ID)
+		err = deletePostFromDatabases(data.Post.ID)
 
 		if err != nil {
-			p.Err = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 			return
 		}
 
-		err = json.NewEncoder(w).Encode(p)
+		err = json.NewEncoder(w).Encode(data.Post)
 
 		if err != nil {
-			p.Err = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 			return
 		}
 
@@ -372,13 +311,12 @@ func (d dataBases) showFriends(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "GET" {
 
-		var p page
-		var userBeta user
+		var userBeta User
 
 		err := json.NewDecoder(r.Body).Decode(&userBeta)
 
 		if err != nil {
-			p.Err = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 			return
 		}
 
@@ -386,8 +324,7 @@ func (d dataBases) showFriends(w http.ResponseWriter, r *http.Request) {
 
 		if err != nil {
 			if err != sql.ErrNoRows {
-				p.Err = http.StatusText(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(p)
+				json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 				return
 			}
 		}
@@ -395,19 +332,14 @@ func (d dataBases) showFriends(w http.ResponseWriter, r *http.Request) {
 		friends, err := obtainAllFriends(userBeta)
 
 		if err != nil {
-			p.Err = http.StatusText(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(p)
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 			return
 		}
 
-		p = page{
-			Friends: friends,
-		}
-
-		err = json.NewEncoder(w).Encode(p)
+		err = json.NewEncoder(w).Encode(friends)
 
 		if err != nil {
-			p.Err = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 			return
 		}
 
@@ -419,52 +351,52 @@ func (d dataBases) addFriend(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "POST" {
 
-		var p page
+		data := struct {
+			User
+			Friend User
+		}{}
 
-		err := json.NewDecoder(r.Body).Decode(&p)
+		err := json.NewDecoder(r.Body).Decode(&data)
 
 		if err != nil {
-			p.Err = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 			return
 		}
 
-		_, err = getUser(p.User)
+		_, err = getUser(data.User)
 
 		if err != nil {
 			if err != sql.ErrNoRows {
-				p.Err = http.StatusText(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(p)
+				json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 				return
 			}
 		}
 
-		check, err := checkIfMyFriendExist(p.Friends[0].ID, p.User.ID)
+		check, err := checkIfMyFriendExist(data.Friend.ID, data.User.ID)
 
 		if err != nil {
 			if err != sql.ErrNoRows {
-				p.Err = http.StatusText(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(p)
+				json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 				return
 			}
 		}
 
 		if check {
-			p.Err = http.StatusText(http.StatusSeeOther)
-			json.NewEncoder(w).Encode(p)
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusSeeOther))
 			return
 		}
 
-		err = addFriendIntoDatabases(p.User.ID, p.Friends[0].ID)
+		err = addFriendIntoDatabases(data.User.ID, data.Friend.ID)
 
 		if err != nil {
-			p.Err = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 			return
 		}
 
-		err = json.NewEncoder(w).Encode(p)
+		err = json.NewEncoder(w).Encode(data.Friend)
 
 		if err != nil {
-			p.Err = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 			return
 		}
 
@@ -475,52 +407,52 @@ func (d dataBases) deleteFriend(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "DELETE" {
 
-		var p page
+		data := struct {
+			User
+			Friend User
+		}{}
 
-		err := json.NewDecoder(r.Body).Decode(&p)
+		err := json.NewDecoder(r.Body).Decode(&data)
 
 		if err != nil {
-			p.Err = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 			return
 		}
 
-		_, err = getUser(p.User)
+		_, err = getUser(data.User)
 
 		if err != nil {
 			if err != sql.ErrNoRows {
-				p.Err = http.StatusText(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(p)
+				json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 				return
 			}
 		}
 
-		check, err := checkIfMyFriendExist(p.Friends[0].ID, p.User.ID)
+		check, err := checkIfMyFriendExist(data.Friend.ID, data.User.ID)
 
 		if err != nil {
 			if err != sql.ErrNoRows {
-				p.Err = http.StatusText(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(p)
+				json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 				return
 			}
 		}
 
 		if !check {
-			p.Err = http.StatusText(http.StatusSeeOther)
-			json.NewEncoder(w).Encode(p)
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusSeeOther))
 			return
 		}
 
-		err = deleteFriendFromDatabases(p.Friends[0].ID, p.User.ID)
+		err = deleteFriendFromDatabases(data.Friend.ID, data.User.ID)
 
 		if err != nil {
-			p.Err = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 			return
 		}
 
-		err = json.NewEncoder(w).Encode(p)
+		err = json.NewEncoder(w).Encode(data.Friend)
 
 		if err != nil {
-			p.Err = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
 			return
 		}
 

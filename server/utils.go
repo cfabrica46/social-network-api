@@ -2,8 +2,8 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"io"
-	"log"
 	"os"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -77,24 +77,22 @@ func open() (databases *sql.DB, err error) {
 	return
 }
 
-func getUser(userBeta user) (u user, err error) {
-
-	var userAux user
+func getUser(userBeta User) (u User, err error) {
 
 	row := db.d.QueryRow("SELECT id,username,password FROM users WHERE username = ? AND password = ?", userBeta.Username, userBeta.Password)
 
-	err = row.Scan(&userAux.ID, &userAux.Username, &userAux.Password)
+	err = row.Scan(&userBeta.ID, &userBeta.Username, &userBeta.Password)
 
 	if err != nil {
 		return
 	}
 
-	u = userAux
+	u = userBeta
 
 	return
 }
 
-func insertIntoDatabase(u *user) (err error) {
+func insertIntoDatabase(u *User) (err error) {
 
 	stmt, err := db.d.Prepare("INSERT INTO users(username,password) VALUES (?,?)")
 
@@ -118,7 +116,7 @@ func insertIntoDatabase(u *user) (err error) {
 	return
 }
 
-func deleteUserIntoDatabases(u user) (err error) {
+func deleteUserIntoDatabases(u User) (err error) {
 
 	stmt, err := db.d.Prepare("DELETE FROM users WHERE id = ? AND username = ? AND password = ?")
 
@@ -135,9 +133,9 @@ func deleteUserIntoDatabases(u user) (err error) {
 	return
 }
 
-func obtainMyPosts(u user) (posts []post, err error) {
+func obtainMyPosts(u User) (posts []Post, err error) {
 
-	rows, err := db.d.Query("SELECT posts.id,users.username,posts.content,posts.date FROM users_posts INNER JOIN users ON users_posts.userID = users.id INNER JOIN posts ON users_posts.postID = posts.id WHERE users.id = ? ORDER BY posts.date DESC", u.ID)
+	rows, err := db.d.Query("SELECT posts.id,users.username,posts.content,posts.date FROM users_posts INNER JOIN users ON users_posts.user_ID = users.id INNER JOIN posts ON users_posts.post_ID = posts.id WHERE users.id = ? ORDER BY posts.date DESC", u.ID)
 
 	if err != nil {
 		return
@@ -147,9 +145,13 @@ func obtainMyPosts(u user) (posts []post, err error) {
 
 	for rows.Next() {
 
-		var postAux post
+		var postAux Post
 
-		rows.Scan(&postAux.ID, &postAux.Propetary, &postAux.Content, &postAux.Date)
+		err = rows.Scan(&postAux.ID, &postAux.Propetary, &postAux.Content, &postAux.Date)
+
+		if err != nil {
+			return
+		}
 
 		posts = append(posts, postAux)
 	}
@@ -157,7 +159,7 @@ func obtainMyPosts(u user) (posts []post, err error) {
 	return
 }
 
-func obtainAllFriendsPosts(u user) (posts []post, err error) {
+func obtainAllFriendsPosts(u User) (posts []Post, err error) {
 
 	idFriends, err := obtainIDFriends(u)
 
@@ -169,7 +171,7 @@ func obtainAllFriendsPosts(u user) (posts []post, err error) {
 
 		var rows *sql.Rows
 
-		rows, err = db.d.Query("SELECT posts.id,users.username,posts.content,posts.date FROM users_posts INNER JOIN users ON users_posts.userID = users.id INNER JOIN posts ON users_posts.postID = posts.id WHERE users.id = ? ORDER BY posts.date DESC", idFriends[i])
+		rows, err = db.d.Query("SELECT posts.id,users.username,posts.content,posts.date FROM users_posts INNER JOIN users ON users_posts.user_ID = users.id INNER JOIN posts ON users_posts.post_ID = posts.id WHERE users.id = ? ORDER BY posts.date DESC", idFriends[i])
 
 		if err != nil {
 			return
@@ -179,9 +181,13 @@ func obtainAllFriendsPosts(u user) (posts []post, err error) {
 
 		for rows.Next() {
 
-			var postAux post
+			var postAux Post
 
-			rows.Scan(&postAux.ID, &postAux.Propetary, &postAux.Content, &postAux.Date)
+			err = rows.Scan(&postAux.ID, &postAux.Propetary, &postAux.Content, &postAux.Date)
+
+			if err != nil {
+				return
+			}
 
 			posts = append(posts, postAux)
 		}
@@ -191,7 +197,7 @@ func obtainAllFriendsPosts(u user) (posts []post, err error) {
 	return
 }
 
-func obtainIDFriends(u user) (idFriends []int, err error) {
+func obtainIDFriends(u User) (idFriends []int, err error) {
 
 	rows, err := db.d.Query("SELECT id1,id2 FROM friends WHERE id1=? OR  id2=?", u.ID, u.ID)
 
@@ -205,7 +211,11 @@ func obtainIDFriends(u user) (idFriends []int, err error) {
 
 		var id1, id2 int
 
-		rows.Scan(&id1, &id2)
+		err = rows.Scan(&id1, &id2)
+
+		if err != nil {
+			return
+		}
 
 		if id1 != u.ID {
 			idFriends = append(idFriends, id1)
@@ -223,37 +233,38 @@ func insertPostIntoDatabases(post string, userID int) (err error) {
 	stmt, err := db.d.Prepare("INSERT INTO posts(content,date) VALUES (?,datetime('now','localtime'))")
 
 	if err != nil {
-		log.Fatal(err)
 		return
 	}
 
 	res, err := stmt.Exec(post)
 
 	if err != nil {
-		log.Fatal(err)
-
 		return
 	}
 
 	id, err := res.LastInsertId()
 
 	if err != nil {
-		log.Fatal(err)
-
 		return
 	}
 
 	postID := int(id)
 
-	insertPostPivote(postID, userID)
+	err = insertPostPivote(postID, userID)
+
+	if err != nil {
+		return
+	}
 
 	return
 
 }
 
-func insertPostPivote(postID, userID int) {
+func insertPostPivote(postID, userID int) (err error) {
 
-	stmt, err := db.d.Prepare("INSERT INTO users_posts(userID,postID) VALUES (?,?)")
+	fmt.Println(postID, userID)
+
+	stmt, err := db.d.Prepare("INSERT INTO users_posts(user_ID,post_ID) VALUES (?,?)")
 
 	if err != nil {
 		return
@@ -265,6 +276,7 @@ func insertPostPivote(postID, userID int) {
 		return
 	}
 
+	return
 }
 
 func deletePostFromDatabases(postID int) (err error) {
@@ -285,7 +297,7 @@ func deletePostFromDatabases(postID int) (err error) {
 
 }
 
-func obtainAllFriends(u user) (friends []user, err error) {
+func obtainAllFriends(u User) (friends []User, err error) {
 
 	idFriends, err := obtainIDFriends(u)
 
@@ -295,7 +307,7 @@ func obtainAllFriends(u user) (friends []user, err error) {
 
 	for i := range idFriends {
 
-		var userAux user
+		var userAux User
 
 		row := db.d.QueryRow("SELECT id,username FROM users WHERE id = ? ", idFriends[i])
 
@@ -338,15 +350,14 @@ func checkIfMyPostExist(id int, userID int) (check bool, err error) {
 
 	var idPost, idUser int
 
-	row := db.d.QueryRow("SELECT userID,postID FROM users_posts WHERE postID = ? AND userID = ?", id, userID, userID, id)
+	row := db.d.QueryRow("SELECT user_ID,post_ID FROM users_posts WHERE post_ID = ? AND user_ID = ?", id, userID, userID, id)
 
 	err = row.Scan(&idUser, &idPost)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			check = false
+			return
 		}
-		check = false
 		return
 	}
 
@@ -377,7 +388,6 @@ func deleteFriendFromDatabases(friendID, userID int) (err error) {
 	stmt, err := db.d.Prepare("DELETE FROM friends WHERE id1 = ? AND id2 = ? OR id1 = ? AND id2 = ?")
 
 	if err != nil {
-		log.Fatal(err)
 		return
 	}
 

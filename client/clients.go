@@ -9,59 +9,27 @@ import (
 	"time"
 )
 
-func login(stringURL string) (user user, err error) {
+func login() (user User, err error) {
 
-	var p page
-
-	client := &http.Client{
-		Timeout: time.Second * 20,
-	}
-
-	req, err := http.NewRequest("CONNECT", stringURL, nil)
-
-	if err != nil {
-		return
-	}
-
-	res, err := client.Do(req)
-
-	if err != nil {
-		return
-	}
-
-	defer res.Body.Close()
-
-	err = json.NewDecoder(res.Body).Decode(&p)
-
-	if err != nil {
-		return
-	}
-
-	if p.Err != "" {
-
-		fmt.Printf("\nERROR: %s\n", p.Err)
-		return
-
-	}
-
-	fmt.Printf("\n%s\n", p.Title)
-	fmt.Printf("%s: ", p.Options[0])
+	fmt.Printf("\nINGRESA TUS DATOS\n")
+	fmt.Printf("Username: ")
 	fmt.Scan(&user.Username)
-	fmt.Printf("%s: ", p.Options[1])
+	fmt.Printf("Password: ")
 	fmt.Scan(&user.Password)
 
 	return
 }
 
-func profileGET(user *user) (err error) {
+func profileGET(u *User) (check bool, err error) {
 
-	var p page
+	var userAux User
+	var errString string
 
 	client := &http.Client{
 		Timeout: time.Second * 20,
 	}
 
-	dataJSON, err := json.Marshal(*user)
+	dataJSON, err := json.Marshal(*u)
 
 	if err != nil {
 		return
@@ -83,34 +51,44 @@ func profileGET(user *user) (err error) {
 
 	defer res.Body.Close()
 
-	err = json.NewDecoder(res.Body).Decode(&p)
+	data, err := io.ReadAll(res.Body)
+
+	if err != nil {
+		return
+	}
+
+	err = json.Unmarshal(data, &userAux)
 
 	if err != nil {
 		if err != io.EOF {
+			err = json.Unmarshal(data, &errString)
+			if err != nil {
+				if err != io.EOF {
+					return
+				}
+				err = nil
+			}
+
+			fmt.Println()
+			fmt.Printf("ERROR: %s\n", errString)
+			err = nil
 			return
+
+		} else {
+			err = nil
 		}
 	}
 
-	if p.Err != "" {
-
-		fmt.Printf("\nERROR: %s\n", p.Err)
-		err = errNotAccept
-		return
-
-	}
-
-	*user = p.User
-
-	fmt.Printf("\n%s\n", p.Title)
-
-	fmt.Printf("Bienvenido %s tu ID es: %d\n", user.Username, user.ID)
-
+	check = true
+	*u = userAux
 	return
+
 }
 
-func createUserPOST(u *user) (err error) {
+func createUser(u *User) (err error) {
 
-	var p page
+	var userAux User
+	var errString string
 
 	client := &http.Client{
 		Timeout: time.Second * 20,
@@ -138,34 +116,44 @@ func createUserPOST(u *user) (err error) {
 
 	defer res.Body.Close()
 
-	err = json.NewDecoder(res.Body).Decode(&p)
+	data, err := io.ReadAll(res.Body)
+
+	if err != nil {
+		return
+	}
+
+	err = json.Unmarshal(data, &userAux)
 
 	if err != nil {
 		if err != io.EOF {
+			err = json.Unmarshal(data, &errString)
+			if err != nil {
+				if err != io.EOF {
+					return
+				}
+				err = nil
+			}
+			fmt.Println()
+
+			fmt.Printf("ERROR: %s\n", errString)
+			err = nil
 			return
+
+		} else {
+			err = nil
 		}
 	}
 
-	if p.Err != "" {
-
-		fmt.Printf("\nERROR: %s\n", p.Err)
-		err = errUsernameAlreadyUsed
-		return
-
-	}
-
-	*u = p.User
-
-	fmt.Printf("\n%s\n", p.Title)
+	*u = userAux
 
 	fmt.Printf("Se creo usuario: %s con contraseña: %s y ID: %d\n", u.Username, u.Password, u.ID)
-
 	return
+
 }
 
-func deleteUser(u user) (err error) {
+func deleteUser(u User) (err error) {
 
-	var p page
+	var errString string
 
 	client := &http.Client{
 		Timeout: time.Second * 20,
@@ -193,28 +181,43 @@ func deleteUser(u user) (err error) {
 
 	defer res.Body.Close()
 
-	err = json.NewDecoder(res.Body).Decode(&p)
+	data, err := io.ReadAll(res.Body)
 
 	if err != nil {
-		if err != io.EOF {
-			return
-		}
-	}
-
-	if p.Err != "" {
-		fmt.Printf("\nERROR: %s\n", p.Err)
 		return
 	}
 
-	fmt.Printf("\n%s\n", p.Title)
+	err = json.Unmarshal(data, &u)
+
+	if err != nil {
+		if err != io.EOF {
+			err = json.Unmarshal(data, &errString)
+			if err != nil {
+				if err != io.EOF {
+					return
+				}
+				err = nil
+			}
+			fmt.Println()
+
+			fmt.Printf("ERROR: %s\n", errString)
+			err = nil
+			return
+
+		} else {
+			err = nil
+		}
+	}
+
+	fmt.Printf("\nSe eliminó la cuenta con éxito,\n")
 
 	return
 
 }
 
-func getPosts(u user, stringURL string) (posts []post, err error) {
+func getPosts(u User, stringURL string) (posts []Post, err error) {
 
-	var p page
+	var errString string
 
 	client := &http.Client{
 		Timeout: time.Second * 20,
@@ -242,39 +245,57 @@ func getPosts(u user, stringURL string) (posts []post, err error) {
 
 	defer res.Body.Close()
 
-	err = json.NewDecoder(res.Body).Decode(&p)
+	data, err := io.ReadAll(res.Body)
 
 	if err != nil {
-		if err != io.EOF {
-			return
-		}
-	}
-
-	if p.Err != "" {
-		fmt.Printf("\nERROR: %s\n", p.Err)
-		err = nil
 		return
 	}
 
-	posts = p.Posts
+	err = json.Unmarshal(data, &posts)
+
+	if err != nil {
+		if err != io.EOF {
+			err = json.Unmarshal(data, &errString)
+			if err != nil {
+				if err != io.EOF {
+					return
+				}
+				err = nil
+			}
+			fmt.Println()
+
+			fmt.Printf("ERROR: %s\n", errString)
+			err = nil
+			return
+
+		} else {
+			err = nil
+		}
+	}
 
 	return
 }
 
-func addPost(po string, u user) (err error) {
+func addPost(postContent string, u User) (err error) {
 
-	var p page
+	var postAux Post
+	var errString string
 
 	client := &http.Client{
 		Timeout: time.Second * 20,
 	}
 
-	p = page{
-		User:  u,
-		Posts: []post{{Content: po}},
-	}
+	fmt.Println(u.ID)
 
-	dataJSON, err := json.Marshal(p)
+	post := Post{Content: postContent}
+
+	dataJSON, err := json.Marshal(struct {
+		User
+		Post
+	}{
+		u,
+		post,
+	})
 
 	if err != nil {
 		return
@@ -296,18 +317,32 @@ func addPost(po string, u user) (err error) {
 
 	defer res.Body.Close()
 
-	err = json.NewDecoder(res.Body).Decode(&p)
+	data, err := io.ReadAll(res.Body)
+
+	if err != nil {
+		return
+	}
+
+	err = json.Unmarshal(data, &postAux)
 
 	if err != nil {
 		if err != io.EOF {
-			return
-		}
-	}
+			err = json.Unmarshal(data, &errString)
+			if err != nil {
+				if err != io.EOF {
+					return
+				}
+				err = nil
+			}
+			fmt.Println()
 
-	if p.Err != "" {
-		fmt.Printf("\nERROR: %s\n", p.Err)
-		err = nil
-		return
+			fmt.Printf("ERROR: %s\n", errString)
+			err = nil
+			return
+
+		} else {
+			err = nil
+		}
 	}
 
 	fmt.Printf("\nSe publico tu post con exito\n")
@@ -315,20 +350,24 @@ func addPost(po string, u user) (err error) {
 	return
 }
 
-func deletePost(u user, postID int) (err error) {
+func deletePost(u User, postID int) (err error) {
 
-	var p page
+	var postAux Post
+	var errString string
 
 	client := &http.Client{
 		Timeout: time.Second * 20,
 	}
 
-	p = page{
-		User:  u,
-		Posts: []post{{ID: postID}},
-	}
+	post := Post{ID: postID}
 
-	dataJSON, err := json.Marshal(p)
+	dataJSON, err := json.Marshal(struct {
+		User
+		Post
+	}{
+		u,
+		post,
+	})
 
 	if err != nil {
 		return
@@ -350,18 +389,32 @@ func deletePost(u user, postID int) (err error) {
 
 	defer res.Body.Close()
 
-	err = json.NewDecoder(res.Body).Decode(&p)
+	data, err := io.ReadAll(res.Body)
+
+	if err != nil {
+		return
+	}
+
+	err = json.Unmarshal(data, &postAux)
 
 	if err != nil {
 		if err != io.EOF {
-			return
-		}
-	}
+			err = json.Unmarshal(data, &errString)
+			if err != nil {
+				if err != io.EOF {
+					return
+				}
+				err = nil
+			}
+			fmt.Println()
 
-	if p.Err != "" {
-		fmt.Printf("\nERROR: %s\n", p.Err)
-		err = nil
-		return
+			fmt.Printf("ERROR: %s\n", errString)
+			err = nil
+			return
+
+		} else {
+			err = nil
+		}
 	}
 
 	fmt.Printf("\nSe eliminó tu post con exito\n")
@@ -370,9 +423,9 @@ func deletePost(u user, postID int) (err error) {
 
 }
 
-func getFriends(u user) (friends []user, err error) {
+func getFriends(u User) (friends []User, err error) {
 
-	var p page
+	var errString string
 
 	client := &http.Client{
 		Timeout: time.Second * 20,
@@ -400,39 +453,55 @@ func getFriends(u user) (friends []user, err error) {
 
 	defer res.Body.Close()
 
-	err = json.NewDecoder(res.Body).Decode(&p)
+	data, err := io.ReadAll(res.Body)
 
 	if err != nil {
-		if err != io.EOF {
-			return
-		}
-	}
-
-	if p.Err != "" {
-		fmt.Printf("\nERROR: %s\n", p.Err)
-		err = nil
 		return
 	}
 
-	friends = p.Friends
+	err = json.Unmarshal(data, &friends)
+
+	if err != nil {
+		if err != io.EOF {
+			err = json.Unmarshal(data, &errString)
+			if err != nil {
+				if err != io.EOF {
+					return
+				}
+				err = nil
+			}
+			fmt.Println()
+
+			fmt.Printf("ERROR: %s\n", errString)
+			err = nil
+			return
+
+		} else {
+			err = nil
+		}
+	}
 
 	return
 }
 
-func addFriend(u user, friendID int) (err error) {
+func addFriend(u User, friendID int) (err error) {
 
-	var p page
+	var friendAux User
+	var errString string
 
 	client := &http.Client{
 		Timeout: time.Second * 20,
 	}
 
-	p = page{
-		User:    u,
-		Friends: []user{{ID: friendID}},
-	}
+	friend := User{ID: friendID}
 
-	dataJSON, err := json.Marshal(p)
+	dataJSON, err := json.Marshal(struct {
+		User
+		Friend User
+	}{
+		u,
+		friend,
+	})
 
 	if err != nil {
 		return
@@ -454,18 +523,32 @@ func addFriend(u user, friendID int) (err error) {
 
 	defer res.Body.Close()
 
-	err = json.NewDecoder(res.Body).Decode(&p)
+	data, err := io.ReadAll(res.Body)
+
+	if err != nil {
+		return
+	}
+
+	err = json.Unmarshal(data, &friendAux)
 
 	if err != nil {
 		if err != io.EOF {
-			return
-		}
-	}
+			err = json.Unmarshal(data, &errString)
+			if err != nil {
+				if err != io.EOF {
+					return
+				}
+				err = nil
+			}
+			fmt.Println()
 
-	if p.Err != "" {
-		fmt.Printf("\nERROR: %s\n", p.Err)
-		err = nil
-		return
+			fmt.Printf("ERROR: %s\n", errString)
+			err = nil
+			return
+
+		} else {
+			err = nil
+		}
 	}
 
 	fmt.Printf("\nSe añadio un nuevo amigo con éxito\n")
@@ -474,20 +557,24 @@ func addFriend(u user, friendID int) (err error) {
 
 }
 
-func deleteFriend(u user, friendID int) (err error) {
+func deleteFriend(u User, friendID int) (err error) {
 
-	var p page
+	var friendAux User
+	var errString string
 
 	client := &http.Client{
 		Timeout: time.Second * 20,
 	}
 
-	p = page{
-		User:    u,
-		Friends: []user{{ID: friendID}},
-	}
+	friend := User{ID: friendID}
 
-	dataJSON, err := json.Marshal(p)
+	dataJSON, err := json.Marshal(struct {
+		User
+		Friend User
+	}{
+		u,
+		friend,
+	})
 
 	if err != nil {
 		return
@@ -509,18 +596,32 @@ func deleteFriend(u user, friendID int) (err error) {
 
 	defer res.Body.Close()
 
-	err = json.NewDecoder(res.Body).Decode(&p)
+	data, err := io.ReadAll(res.Body)
+
+	if err != nil {
+		return
+	}
+
+	err = json.Unmarshal(data, &friendAux)
 
 	if err != nil {
 		if err != io.EOF {
-			return
-		}
-	}
+			err = json.Unmarshal(data, &errString)
+			if err != nil {
+				if err != io.EOF {
+					return
+				}
+				err = nil
+			}
+			fmt.Println()
 
-	if p.Err != "" {
-		fmt.Printf("\nERROR: %s\n", p.Err)
-		err = nil
-		return
+			fmt.Printf("ERROR: %s\n", errString)
+			err = nil
+			return
+
+		} else {
+			err = nil
+		}
 	}
 
 	fmt.Printf("\nSe eliminó tu amistad con exito\n")
