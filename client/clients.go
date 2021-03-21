@@ -5,36 +5,36 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
+	"strconv"
 	"time"
 )
 
 func profileGET(u *User) (check bool, err error) {
 
 	var userAux User
-	var errString string
 
 	client := &http.Client{
 		Timeout: time.Second * 20,
 	}
 
-	dataJSON, err := json.Marshal(*u)
+	req, err := http.NewRequest("GET", "http://localhost:8080/user", nil)
 
 	if err != nil {
+		log.Fatal(err)
+
 		return
 	}
 
-	buf := bytes.NewBuffer(dataJSON)
-
-	req, err := http.NewRequest("GET", "http://localhost:8080/user", buf)
-
-	if err != nil {
-		return
-	}
+	req.Header.Set("id", strconv.Itoa(u.ID))
+	req.Header.Set("username", u.Username)
+	req.Header.Set("password", u.Password)
 
 	res, err := client.Do(req)
 
 	if err != nil {
+		log.Fatal(err)
 		return
 	}
 
@@ -43,6 +43,8 @@ func profileGET(u *User) (check bool, err error) {
 	data, err := io.ReadAll(res.Body)
 
 	if err != nil {
+		log.Fatal(err)
+
 		return
 	}
 
@@ -50,23 +52,36 @@ func profileGET(u *User) (check bool, err error) {
 
 	if err != nil {
 		if err != io.EOF {
-			err = json.Unmarshal(data, &errString)
-			if err != nil {
-				if err != io.EOF {
-					return
-				}
-				err = nil
-			}
+			log.Fatal(err)
 
-			fmt.Println()
-			fmt.Printf("ERROR: %s\n", errString)
-			err = nil
 			return
-
 		} else {
 			err = nil
 		}
 	}
+
+	if userAux.Username == "" || userAux.Password == "" {
+		errMensaje := struct {
+			Mensaje string
+		}{}
+
+		err = json.Unmarshal(data, &errMensaje)
+		if err != nil {
+			if err != io.EOF {
+				log.Fatal(err)
+
+				return
+			}
+			err = nil
+		}
+
+		fmt.Println()
+		fmt.Printf("ERROR: %s\n", errMensaje.Mensaje)
+		err = nil
+		return
+	}
+
+	fmt.Println(userAux)
 
 	check = true
 	*u = userAux
@@ -77,7 +92,6 @@ func profileGET(u *User) (check bool, err error) {
 func createUser(u *User) (err error) {
 
 	var userAux User
-	var errString string
 
 	client := &http.Client{
 		Timeout: time.Second * 20,
@@ -115,22 +129,29 @@ func createUser(u *User) (err error) {
 
 	if err != nil {
 		if err != io.EOF {
-			err = json.Unmarshal(data, &errString)
-			if err != nil {
-				if err != io.EOF {
-					return
-				}
-				err = nil
-			}
-			fmt.Println()
-
-			fmt.Printf("ERROR: %s\n", errString)
-			err = nil
 			return
-
 		} else {
 			err = nil
 		}
+	}
+
+	if userAux.Username == "" || userAux.Password == "" {
+		errMensaje := struct {
+			Mensaje string
+		}{}
+
+		err = json.Unmarshal(data, &errMensaje)
+		if err != nil {
+			if err != io.EOF {
+				return
+			}
+			err = nil
+		}
+
+		fmt.Println()
+		fmt.Printf("ERROR: %s\n", errMensaje.Mensaje)
+		err = nil
+		return
 	}
 
 	*u = userAux
@@ -141,8 +162,6 @@ func createUser(u *User) (err error) {
 }
 
 func deleteUser(u User) (err error) {
-
-	var errString string
 
 	client := &http.Client{
 		Timeout: time.Second * 20,
@@ -180,22 +199,29 @@ func deleteUser(u User) (err error) {
 
 	if err != nil {
 		if err != io.EOF {
-			err = json.Unmarshal(data, &errString)
-			if err != nil {
-				if err != io.EOF {
-					return
-				}
-				err = nil
-			}
-			fmt.Println()
-
-			fmt.Printf("ERROR: %s\n", errString)
-			err = nil
 			return
-
 		} else {
 			err = nil
 		}
+	}
+
+	if u.Username == "" || u.Password == "" {
+		errMensaje := struct {
+			Mensaje string
+		}{}
+
+		err = json.Unmarshal(data, &errMensaje)
+		if err != nil {
+			if err != io.EOF {
+				return
+			}
+			err = nil
+		}
+
+		fmt.Println()
+		fmt.Printf("ERROR: %s\n", errMensaje.Mensaje)
+		err = nil
+		return
 	}
 
 	fmt.Printf("\nSe eliminó la cuenta con éxito,\n")
@@ -206,30 +232,29 @@ func deleteUser(u User) (err error) {
 
 func getPosts(u User, stringURL string) (posts []Post, err error) {
 
-	var errString string
-
 	client := &http.Client{
 		Timeout: time.Second * 20,
 	}
 
-	dataJSON, err := json.Marshal(u)
+	req, err := http.NewRequest("GET", stringURL, nil)
 
 	if err != nil {
 		return
 	}
 
-	buf := bytes.NewBuffer(dataJSON)
-
-	req, err := http.NewRequest("GET", stringURL, buf)
-
-	if err != nil {
-		return
-	}
+	req.Header.Set("id", strconv.Itoa(u.ID))
+	req.Header.Set("username", u.Username)
+	req.Header.Set("password", u.Password)
 
 	res, err := client.Do(req)
 
 	if err != nil {
-		return
+		if err != io.EOF {
+
+			log.Fatal(err)
+
+			return
+		}
 	}
 
 	defer res.Body.Close()
@@ -244,22 +269,29 @@ func getPosts(u User, stringURL string) (posts []Post, err error) {
 
 	if err != nil {
 		if err != io.EOF {
-			err = json.Unmarshal(data, &errString)
-			if err != nil {
-				if err != io.EOF {
-					return
-				}
-				err = nil
-			}
-			fmt.Println()
-
-			fmt.Printf("ERROR: %s\n", errString)
-			err = nil
 			return
-
 		} else {
 			err = nil
 		}
+	}
+
+	if u.Username == "" || u.Password == "" {
+		errMensaje := struct {
+			Mensaje string
+		}{}
+
+		err = json.Unmarshal(data, &errMensaje)
+		if err != nil {
+			if err != io.EOF {
+				return
+			}
+			err = nil
+		}
+
+		fmt.Println()
+		fmt.Printf("ERROR: %s\n", errMensaje.Mensaje)
+		err = nil
+		return
 	}
 
 	return
@@ -268,7 +300,6 @@ func getPosts(u User, stringURL string) (posts []Post, err error) {
 func addPost(postContent string, u User) (err error) {
 
 	var postAux Post
-	var errString string
 
 	client := &http.Client{
 		Timeout: time.Second * 20,
@@ -314,22 +345,29 @@ func addPost(postContent string, u User) (err error) {
 
 	if err != nil {
 		if err != io.EOF {
-			err = json.Unmarshal(data, &errString)
-			if err != nil {
-				if err != io.EOF {
-					return
-				}
-				err = nil
-			}
-			fmt.Println()
-
-			fmt.Printf("ERROR: %s\n", errString)
-			err = nil
 			return
-
 		} else {
 			err = nil
 		}
+	}
+
+	if u.Username == "" || u.Password == "" {
+		errMensaje := struct {
+			Mensaje string
+		}{}
+
+		err = json.Unmarshal(data, &errMensaje)
+		if err != nil {
+			if err != io.EOF {
+				return
+			}
+			err = nil
+		}
+
+		fmt.Println()
+		fmt.Printf("ERROR: %s\n", errMensaje.Mensaje)
+		err = nil
+		return
 	}
 
 	fmt.Printf("\nSe publico tu post con exito\n")
@@ -340,7 +378,6 @@ func addPost(postContent string, u User) (err error) {
 func deletePost(u User, postID int) (err error) {
 
 	var postAux Post
-	var errString string
 
 	client := &http.Client{
 		Timeout: time.Second * 20,
@@ -382,26 +419,35 @@ func deletePost(u User, postID int) (err error) {
 		return
 	}
 
+	fmt.Printf("%s\n", data)
+
 	err = json.Unmarshal(data, &postAux)
 
 	if err != nil {
 		if err != io.EOF {
-			err = json.Unmarshal(data, &errString)
-			if err != nil {
-				if err != io.EOF {
-					return
-				}
-				err = nil
-			}
-			fmt.Println()
-
-			fmt.Printf("ERROR: %s\n", errString)
-			err = nil
 			return
-
 		} else {
 			err = nil
 		}
+	}
+
+	if u.Username == "" || u.Password == "" {
+		errMensaje := struct {
+			Mensaje string
+		}{}
+
+		err = json.Unmarshal(data, &errMensaje)
+		if err != nil {
+			if err != io.EOF {
+				return
+			}
+			err = nil
+		}
+
+		fmt.Println()
+		fmt.Printf("ERROR: %s\n", errMensaje.Mensaje)
+		err = nil
+		return
 	}
 
 	fmt.Printf("\nSe eliminó tu post con exito\n")
@@ -412,30 +458,29 @@ func deletePost(u User, postID int) (err error) {
 
 func getFriends(u User) (friends []User, err error) {
 
-	var errString string
-
 	client := &http.Client{
 		Timeout: time.Second * 20,
 	}
 
-	dataJSON, err := json.Marshal(u)
+	req, err := http.NewRequest("GET", "http://localhost:8080/user/friends", nil)
 
 	if err != nil {
 		return
 	}
 
-	buf := bytes.NewBuffer(dataJSON)
-
-	req, err := http.NewRequest("GET", "http://localhost:8080/user/friends", buf)
-
-	if err != nil {
-		return
-	}
+	req.Header.Set("id", strconv.Itoa(u.ID))
+	req.Header.Set("username", u.Username)
+	req.Header.Set("password", u.Password)
 
 	res, err := client.Do(req)
 
 	if err != nil {
-		return
+		if err != io.EOF {
+
+			log.Fatal(err)
+
+			return
+		}
 	}
 
 	defer res.Body.Close()
@@ -450,22 +495,29 @@ func getFriends(u User) (friends []User, err error) {
 
 	if err != nil {
 		if err != io.EOF {
-			err = json.Unmarshal(data, &errString)
-			if err != nil {
-				if err != io.EOF {
-					return
-				}
-				err = nil
-			}
-			fmt.Println()
-
-			fmt.Printf("ERROR: %s\n", errString)
-			err = nil
 			return
-
 		} else {
 			err = nil
 		}
+	}
+
+	if u.Username == "" || u.Password == "" {
+		errMensaje := struct {
+			Mensaje string
+		}{}
+
+		err = json.Unmarshal(data, &errMensaje)
+		if err != nil {
+			if err != io.EOF {
+				return
+			}
+			err = nil
+		}
+
+		fmt.Println()
+		fmt.Printf("ERROR: %s\n", errMensaje.Mensaje)
+		err = nil
+		return
 	}
 
 	return
@@ -474,7 +526,6 @@ func getFriends(u User) (friends []User, err error) {
 func addFriend(u User, friendID int) (err error) {
 
 	var friendAux User
-	var errString string
 
 	client := &http.Client{
 		Timeout: time.Second * 20,
@@ -520,22 +571,29 @@ func addFriend(u User, friendID int) (err error) {
 
 	if err != nil {
 		if err != io.EOF {
-			err = json.Unmarshal(data, &errString)
-			if err != nil {
-				if err != io.EOF {
-					return
-				}
-				err = nil
-			}
-			fmt.Println()
-
-			fmt.Printf("ERROR: %s\n", errString)
-			err = nil
 			return
-
 		} else {
 			err = nil
 		}
+	}
+
+	if u.Username == "" || u.Password == "" {
+		errMensaje := struct {
+			Mensaje string
+		}{}
+
+		err = json.Unmarshal(data, &errMensaje)
+		if err != nil {
+			if err != io.EOF {
+				return
+			}
+			err = nil
+		}
+
+		fmt.Println()
+		fmt.Printf("ERROR: %s\n", errMensaje.Mensaje)
+		err = nil
+		return
 	}
 
 	fmt.Printf("\nSe añadio un nuevo amigo con éxito\n")
@@ -547,7 +605,6 @@ func addFriend(u User, friendID int) (err error) {
 func deleteFriend(u User, friendID int) (err error) {
 
 	var friendAux User
-	var errString string
 
 	client := &http.Client{
 		Timeout: time.Second * 20,
@@ -593,22 +650,29 @@ func deleteFriend(u User, friendID int) (err error) {
 
 	if err != nil {
 		if err != io.EOF {
-			err = json.Unmarshal(data, &errString)
-			if err != nil {
-				if err != io.EOF {
-					return
-				}
-				err = nil
-			}
-			fmt.Println()
-
-			fmt.Printf("ERROR: %s\n", errString)
-			err = nil
 			return
-
 		} else {
 			err = nil
 		}
+	}
+
+	if u.Username == "" || u.Password == "" {
+		errMensaje := struct {
+			Mensaje string
+		}{}
+
+		err = json.Unmarshal(data, &errMensaje)
+		if err != nil {
+			if err != io.EOF {
+				return
+			}
+			err = nil
+		}
+
+		fmt.Println()
+		fmt.Printf("ERROR: %s\n", errMensaje.Mensaje)
+		err = nil
+		return
 	}
 
 	fmt.Printf("\nSe eliminó tu amistad con exito\n")

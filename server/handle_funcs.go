@@ -4,37 +4,49 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"strconv"
 )
 
 func (d *dataBases) user(w http.ResponseWriter, r *http.Request) {
+
+	errMensaje := struct {
+		Mensaje string
+	}{}
 
 	switch r.Method {
 	case "GET":
 
 		var userBeta User
+		var err error
 
-		err := json.NewDecoder(r.Body).Decode(&userBeta)
+		idBeta := r.Header.Get("id")
+
+		userBeta.ID, err = strconv.Atoi(idBeta)
 
 		if err != nil {
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
-			return
+			errMensaje.Mensaje = http.StatusText(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(errMensaje)
 		}
 
-		u, err := getUser(userBeta)
+		userBeta.Username = r.Header.Get("username")
+		userBeta.Password = r.Header.Get("password")
 
-		if err != nil {
-			if err == sql.ErrNoRows {
-				json.NewEncoder(w).Encode(http.StatusText(http.StatusNetworkAuthenticationRequired))
-				return
-			}
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+		u := getUser(userBeta)
+
+		if u == nil {
+
+			errMensaje.Mensaje = http.StatusText(http.StatusNetworkAuthenticationRequired)
+			json.NewEncoder(w).Encode(errMensaje)
+
 			return
+
 		}
 
-		err = json.NewEncoder(w).Encode(u)
+		err = json.NewEncoder(w).Encode(*u)
 
 		if err != nil {
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			errMensaje.Mensaje = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(errMensaje)
 			return
 		}
 
@@ -45,32 +57,34 @@ func (d *dataBases) user(w http.ResponseWriter, r *http.Request) {
 		err := json.NewDecoder(r.Body).Decode(&userBeta)
 
 		if err != nil {
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			errMensaje.Mensaje = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(errMensaje)
 			return
 		}
 
-		_, err = getUser(userBeta)
+		u := getUser(userBeta)
 
-		if err != nil {
-			if err == sql.ErrNoRows {
-				json.NewEncoder(w).Encode(http.StatusText(http.StatusNetworkAuthenticationRequired))
-				return
-			}
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+		if u == nil {
+
+			errMensaje.Mensaje = http.StatusText(http.StatusNetworkAuthenticationRequired)
+			json.NewEncoder(w).Encode(errMensaje)
 			return
+
 		}
 
 		err = insertIntoDatabase(&userBeta)
 
 		if err != nil {
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusLocked))
+			errMensaje.Mensaje = http.StatusText(http.StatusLocked)
+			json.NewEncoder(w).Encode(errMensaje)
 			return
 		}
 
 		err = json.NewEncoder(w).Encode(userBeta)
 
 		if err != nil {
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			errMensaje.Mensaje = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(errMensaje)
 			return
 		}
 
@@ -81,32 +95,34 @@ func (d *dataBases) user(w http.ResponseWriter, r *http.Request) {
 		err := json.NewDecoder(r.Body).Decode(&userBeta)
 
 		if err != nil {
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			errMensaje.Mensaje = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(errMensaje)
 			return
 		}
 
-		u, err := getUser(userBeta)
+		u := getUser(userBeta)
 
-		if err != nil {
-			if err == sql.ErrNoRows {
-				json.NewEncoder(w).Encode(http.StatusText(http.StatusNetworkAuthenticationRequired))
-				return
-			}
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+		if u == nil {
+
+			errMensaje.Mensaje = http.StatusText(http.StatusNetworkAuthenticationRequired)
+			json.NewEncoder(w).Encode(errMensaje)
 			return
+
 		}
 
-		err = deleteUserIntoDatabases(u)
+		err = deleteUserIntoDatabases(*u)
 
 		if err != nil {
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			errMensaje.Mensaje = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(errMensaje)
 			return
 		}
 
 		err = json.NewEncoder(w).Encode(u)
 
 		if err != nil {
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			errMensaje.Mensaje = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(errMensaje)
 			return
 		}
 	}
@@ -115,41 +131,52 @@ func (d *dataBases) user(w http.ResponseWriter, r *http.Request) {
 
 func (d dataBases) myPosts(w http.ResponseWriter, r *http.Request) {
 
+	errMensaje := struct {
+		Mensaje string
+	}{}
+
 	switch r.Method {
 
 	case "GET":
 
 		var userBeta User
+		var err error
 
-		err := json.NewDecoder(r.Body).Decode(&userBeta)
+		idBeta := r.Header.Get("id")
+
+		userBeta.ID, err = strconv.Atoi(idBeta)
 
 		if err != nil {
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
-			return
+			errMensaje.Mensaje = http.StatusText(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(errMensaje)
 		}
 
-		_, err = getUser(userBeta)
+		userBeta.Username = r.Header.Get("username")
+		userBeta.Password = r.Header.Get("password")
 
-		if err != nil {
-			if err == sql.ErrNoRows {
-				json.NewEncoder(w).Encode(http.StatusText(http.StatusNetworkAuthenticationRequired))
-				return
-			}
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+		u := getUser(userBeta)
+
+		if u == nil {
+
+			errMensaje.Mensaje = http.StatusText(http.StatusNetworkAuthenticationRequired)
+			json.NewEncoder(w).Encode(errMensaje)
 			return
+
 		}
 
 		posts, err := obtainMyPosts(userBeta)
 
 		if err != nil {
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			errMensaje.Mensaje = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(errMensaje)
 			return
 		}
 
 		err = json.NewEncoder(w).Encode(posts)
 
 		if err != nil {
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			errMensaje.Mensaje = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(errMensaje)
 			return
 		}
 
@@ -163,32 +190,34 @@ func (d dataBases) myPosts(w http.ResponseWriter, r *http.Request) {
 		err := json.NewDecoder(r.Body).Decode(&data)
 
 		if err != nil {
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			errMensaje.Mensaje = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(errMensaje)
 			return
 		}
 
-		u, err := getUser(data.User)
+		u := getUser(data.User)
 
-		if err != nil {
-			if err == sql.ErrNoRows {
-				json.NewEncoder(w).Encode(http.StatusText(http.StatusNetworkAuthenticationRequired))
-				return
-			}
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+		if u == nil {
+
+			errMensaje.Mensaje = http.StatusText(http.StatusNetworkAuthenticationRequired)
+			json.NewEncoder(w).Encode(errMensaje)
 			return
+
 		}
 
 		err = insertPostIntoDatabases(data.Post.Content, u.ID)
 
 		if err != nil {
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			errMensaje.Mensaje = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(errMensaje)
 			return
 		}
 
 		err = json.NewEncoder(w).Encode(data.Post)
 
 		if err != nil {
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			errMensaje.Mensaje = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(errMensaje)
 			return
 		}
 
@@ -202,46 +231,50 @@ func (d dataBases) myPosts(w http.ResponseWriter, r *http.Request) {
 		err := json.NewDecoder(r.Body).Decode(&data)
 
 		if err != nil {
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			errMensaje.Mensaje = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(errMensaje)
 			return
 		}
 
-		_, err = getUser(data.User)
+		u := getUser(data.User)
 
-		if err != nil {
-			if err == sql.ErrNoRows {
-				json.NewEncoder(w).Encode(http.StatusText(http.StatusNetworkAuthenticationRequired))
-				return
-			}
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+		if u == nil {
+
+			errMensaje.Mensaje = http.StatusText(http.StatusNetworkAuthenticationRequired)
+			json.NewEncoder(w).Encode(errMensaje)
 			return
+
 		}
 
 		check, err := checkIfMyPostExist(data.Post.ID, data.User.ID)
 
 		if err != nil {
 			if err != sql.ErrNoRows {
-				json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+				errMensaje.Mensaje = http.StatusText(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(errMensaje)
 				return
 			}
 		}
 
 		if !check {
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusSeeOther))
+			errMensaje.Mensaje = http.StatusText(http.StatusSeeOther)
+			json.NewEncoder(w).Encode(errMensaje)
 			return
 		}
 
 		err = deletePostFromDatabases(data.Post.ID)
 
 		if err != nil {
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			errMensaje.Mensaje = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(errMensaje)
 			return
 		}
 
 		err = json.NewEncoder(w).Encode(data.Post)
 
 		if err != nil {
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			errMensaje.Mensaje = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(errMensaje)
 			return
 		}
 	}
@@ -249,39 +282,50 @@ func (d dataBases) myPosts(w http.ResponseWriter, r *http.Request) {
 
 func (d dataBases) friendsPosts(w http.ResponseWriter, r *http.Request) {
 
+	errMensaje := struct {
+		Mensaje string
+	}{}
+
 	if r.Method == "GET" {
 
 		var userBeta User
+		var err error
 
-		err := json.NewDecoder(r.Body).Decode(&userBeta)
+		idBeta := r.Header.Get("id")
+
+		userBeta.ID, err = strconv.Atoi(idBeta)
 
 		if err != nil {
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
-			return
+			errMensaje.Mensaje = http.StatusText(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(errMensaje)
 		}
 
-		_, err = getUser(userBeta)
+		userBeta.Username = r.Header.Get("username")
+		userBeta.Password = r.Header.Get("password")
 
-		if err != nil {
-			if err == sql.ErrNoRows {
-				json.NewEncoder(w).Encode(http.StatusText(http.StatusNetworkAuthenticationRequired))
-				return
-			}
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+		u := getUser(userBeta)
+
+		if u == nil {
+
+			errMensaje.Mensaje = http.StatusText(http.StatusNetworkAuthenticationRequired)
+			json.NewEncoder(w).Encode(errMensaje)
 			return
+
 		}
 
 		posts, err := obtainAllFriendsPosts(userBeta)
 
 		if err != nil {
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			errMensaje.Mensaje = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(errMensaje)
 			return
 		}
 
 		err = json.NewEncoder(w).Encode(posts)
 
 		if err != nil {
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			errMensaje.Mensaje = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(errMensaje)
 			return
 		}
 
@@ -290,41 +334,52 @@ func (d dataBases) friendsPosts(w http.ResponseWriter, r *http.Request) {
 
 func (d dataBases) friends(w http.ResponseWriter, r *http.Request) {
 
+	errMensaje := struct {
+		Mensaje string
+	}{}
+
 	switch r.Method {
 
 	case "GET":
 
 		var userBeta User
+		var err error
 
-		err := json.NewDecoder(r.Body).Decode(&userBeta)
+		idBeta := r.Header.Get("id")
+
+		userBeta.ID, err = strconv.Atoi(idBeta)
 
 		if err != nil {
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
-			return
+			errMensaje.Mensaje = http.StatusText(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(errMensaje)
 		}
 
-		_, err = getUser(userBeta)
+		userBeta.Username = r.Header.Get("username")
+		userBeta.Password = r.Header.Get("password")
 
-		if err != nil {
-			if err == sql.ErrNoRows {
-				json.NewEncoder(w).Encode(http.StatusText(http.StatusNetworkAuthenticationRequired))
-				return
-			}
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+		u := getUser(userBeta)
+
+		if u == nil {
+
+			errMensaje.Mensaje = http.StatusText(http.StatusNetworkAuthenticationRequired)
+			json.NewEncoder(w).Encode(errMensaje)
 			return
+
 		}
 
 		friends, err := obtainAllFriends(userBeta)
 
 		if err != nil {
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			errMensaje.Mensaje = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(errMensaje)
 			return
 		}
 
 		err = json.NewEncoder(w).Encode(friends)
 
 		if err != nil {
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			errMensaje.Mensaje = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(errMensaje)
 			return
 		}
 
@@ -338,46 +393,50 @@ func (d dataBases) friends(w http.ResponseWriter, r *http.Request) {
 		err := json.NewDecoder(r.Body).Decode(&data)
 
 		if err != nil {
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			errMensaje.Mensaje = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(errMensaje)
 			return
 		}
 
-		_, err = getUser(data.User)
+		u := getUser(data.User)
 
-		if err != nil {
-			if err == sql.ErrNoRows {
-				json.NewEncoder(w).Encode(http.StatusText(http.StatusNetworkAuthenticationRequired))
-				return
-			}
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+		if u == nil {
+
+			errMensaje.Mensaje = http.StatusText(http.StatusNetworkAuthenticationRequired)
+			json.NewEncoder(w).Encode(errMensaje)
 			return
+
 		}
 
 		check, err := checkIfMyFriendExist(data.Friend.ID, data.User.ID)
 
 		if err != nil {
 			if err != sql.ErrNoRows {
-				json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+				errMensaje.Mensaje = http.StatusText(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(errMensaje)
 				return
 			}
 		}
 
 		if check {
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusSeeOther))
+			errMensaje.Mensaje = http.StatusText(http.StatusSeeOther)
+			json.NewEncoder(w).Encode(errMensaje)
 			return
 		}
 
 		err = addFriendIntoDatabases(data.User.ID, data.Friend.ID)
 
 		if err != nil {
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			errMensaje.Mensaje = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(errMensaje)
 			return
 		}
 
 		err = json.NewEncoder(w).Encode(data.Friend)
 
 		if err != nil {
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			errMensaje.Mensaje = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(errMensaje)
 			return
 		}
 
@@ -391,46 +450,50 @@ func (d dataBases) friends(w http.ResponseWriter, r *http.Request) {
 		err := json.NewDecoder(r.Body).Decode(&data)
 
 		if err != nil {
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			errMensaje.Mensaje = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(errMensaje)
 			return
 		}
 
-		_, err = getUser(data.User)
+		u := getUser(data.User)
 
-		if err != nil {
-			if err == sql.ErrNoRows {
-				json.NewEncoder(w).Encode(http.StatusText(http.StatusNetworkAuthenticationRequired))
-				return
-			}
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+		if u == nil {
+
+			errMensaje.Mensaje = http.StatusText(http.StatusNetworkAuthenticationRequired)
+			json.NewEncoder(w).Encode(errMensaje)
 			return
+
 		}
 
 		check, err := checkIfMyFriendExist(data.Friend.ID, data.User.ID)
 
 		if err != nil {
 			if err != sql.ErrNoRows {
-				json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+				errMensaje.Mensaje = http.StatusText(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(errMensaje)
 				return
 			}
 		}
 
 		if !check {
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusSeeOther))
+			errMensaje.Mensaje = http.StatusText(http.StatusSeeOther)
+			json.NewEncoder(w).Encode(errMensaje)
 			return
 		}
 
 		err = deleteFriendFromDatabases(data.Friend.ID, data.User.ID)
 
 		if err != nil {
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			errMensaje.Mensaje = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(errMensaje)
 			return
 		}
 
 		err = json.NewEncoder(w).Encode(data.Friend)
 
 		if err != nil {
-			json.NewEncoder(w).Encode(http.StatusText(http.StatusInternalServerError))
+			errMensaje.Mensaje = http.StatusText(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(errMensaje)
 			return
 		}
 	}

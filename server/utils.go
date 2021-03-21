@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"io"
+	"log"
 	"os"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -76,17 +77,18 @@ func open() (databases *sql.DB, err error) {
 	return
 }
 
-func getUser(userBeta User) (u User, err error) {
+func getUser(userBeta User) (u *User) {
 
 	row := db.d.QueryRow("SELECT id,username,password FROM users WHERE username = ? AND password = ?", userBeta.Username, userBeta.Password)
 
-	err = row.Scan(&userBeta.ID, &userBeta.Username, &userBeta.Password)
+	err := row.Scan(&userBeta.ID, &userBeta.Username, &userBeta.Password)
 
 	if err != nil {
+		log.Fatal(err)
 		return
 	}
 
-	u = userBeta
+	u = &userBeta
 
 	return
 }
