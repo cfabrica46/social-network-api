@@ -274,8 +274,6 @@ func addPost(postContent string, u User) (err error) {
 		Timeout: time.Second * 20,
 	}
 
-	fmt.Println(u.ID)
-
 	post := Post{Content: postContent}
 
 	dataJSON, err := json.Marshal(struct {

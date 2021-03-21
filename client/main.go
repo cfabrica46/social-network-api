@@ -152,7 +152,7 @@ func loopIntoProfile(u User, exit *bool) {
 			return
 		}
 
-		printMyPosts(posts)
+		printPosts(posts)
 
 	case 2:
 
@@ -167,7 +167,7 @@ func loopIntoProfile(u User, exit *bool) {
 			return
 		}
 
-		printMyPosts(posts)
+		printPosts(posts)
 
 	case 3:
 
@@ -178,12 +178,6 @@ func loopIntoProfile(u User, exit *bool) {
 		reader := bufio.NewReader(os.Stdin)
 
 		mensaje, err := reader.ReadString('\n')
-
-		if err != nil {
-			return
-		}
-
-		mensaje, err = reader.ReadString('\n')
 
 		if err != nil {
 			return

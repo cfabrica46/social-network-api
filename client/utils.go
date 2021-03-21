@@ -26,7 +26,7 @@ func printFriends(friends []User) {
 
 }
 
-func printMyPosts(posts []Post) {
+func printPosts(posts []Post) {
 
 	fmt.Printf("\nPosts:\n")
 
