@@ -323,19 +323,18 @@ func obtainAllFriends(u User) (friends []User, err error) {
 	return
 }
 
-func checkIfMyFriendExist(id int, userID int) (check bool, err error) {
+func checkIfMyFriendAlreadyIsMyFriend(id int, userID int) (check bool) {
 
 	var id1, id2 int
 
 	row := db.d.QueryRow("SELECT id1,id2 FROM friends WHERE (id1 = ? AND id2 = ?) OR (id1 = ? AND id2 = ?) ", id, userID, userID, id)
 
-	err = row.Scan(&id1, &id2)
+	err := row.Scan(&id1, &id2)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			check = false
+			return
 		}
-		check = false
 		return
 	}
 

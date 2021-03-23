@@ -26,6 +26,7 @@ func (d *dataBases) user(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			errMensaje.Mensaje = http.StatusText(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(errMensaje)
+			return
 		}
 
 		userBeta.Username = r.Header.Get("username")
@@ -72,7 +73,7 @@ func (d *dataBases) user(w http.ResponseWriter, r *http.Request) {
 
 		}
 
-		err = insertIntoDatabase(&userBeta)
+		err = insertIntoDatabase(u)
 
 		if err != nil {
 			errMensaje.Mensaje = http.StatusText(http.StatusLocked)
@@ -80,7 +81,7 @@ func (d *dataBases) user(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = json.NewEncoder(w).Encode(userBeta)
+		err = json.NewEncoder(w).Encode(*u)
 
 		if err != nil {
 			errMensaje.Mensaje = http.StatusText(http.StatusInternalServerError)
@@ -149,6 +150,7 @@ func (d dataBases) myPosts(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			errMensaje.Mensaje = http.StatusText(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(errMensaje)
+			return
 		}
 
 		userBeta.Username = r.Header.Get("username")
@@ -164,9 +166,13 @@ func (d dataBases) myPosts(w http.ResponseWriter, r *http.Request) {
 
 		}
 
-		posts, err := obtainMyPosts(userBeta)
+		posts, err := obtainMyPosts(*u)
 
 		if err != nil {
+			if err == sql.ErrNoRows {
+				json.NewEncoder(w).Encode(posts)
+				return
+			}
 			errMensaje.Mensaje = http.StatusText(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(errMensaje)
 			return
@@ -298,6 +304,7 @@ func (d dataBases) friendsPosts(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			errMensaje.Mensaje = http.StatusText(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(errMensaje)
+			return
 		}
 
 		userBeta.Username = r.Header.Get("username")
@@ -313,9 +320,13 @@ func (d dataBases) friendsPosts(w http.ResponseWriter, r *http.Request) {
 
 		}
 
-		posts, err := obtainAllFriendsPosts(userBeta)
+		posts, err := obtainAllFriendsPosts(*u)
 
 		if err != nil {
+			if err == sql.ErrNoRows {
+				json.NewEncoder(w).Encode(posts)
+				return
+			}
 			errMensaje.Mensaje = http.StatusText(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(errMensaje)
 			return
@@ -367,9 +378,13 @@ func (d dataBases) friends(w http.ResponseWriter, r *http.Request) {
 
 		}
 
-		friends, err := obtainAllFriends(userBeta)
+		friends, err := obtainAllFriends(*u)
 
 		if err != nil {
+			if err == sql.ErrNoRows {
+				json.NewEncoder(w).Encode(friends)
+				return
+			}
 			errMensaje.Mensaje = http.StatusText(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(errMensaje)
 			return
@@ -408,15 +423,7 @@ func (d dataBases) friends(w http.ResponseWriter, r *http.Request) {
 
 		}
 
-		check, err := checkIfMyFriendExist(data.Friend.ID, data.User.ID)
-
-		if err != nil {
-			if err != sql.ErrNoRows {
-				errMensaje.Mensaje = http.StatusText(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(errMensaje)
-				return
-			}
-		}
+		check := checkIfMyFriendAlreadyIsMyFriend(data.Friend.ID, data.User.ID)
 
 		if check {
 			errMensaje.Mensaje = http.StatusText(http.StatusSeeOther)
@@ -465,15 +472,7 @@ func (d dataBases) friends(w http.ResponseWriter, r *http.Request) {
 
 		}
 
-		check, err := checkIfMyFriendExist(data.Friend.ID, data.User.ID)
-
-		if err != nil {
-			if err != sql.ErrNoRows {
-				errMensaje.Mensaje = http.StatusText(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(errMensaje)
-				return
-			}
-		}
+		check := checkIfMyFriendAlreadyIsMyFriend(data.Friend.ID, data.User.ID)
 
 		if !check {
 			errMensaje.Mensaje = http.StatusText(http.StatusSeeOther)
