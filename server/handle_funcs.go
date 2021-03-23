@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
-	"strconv"
 )
 
 func (d *dataBases) user(w http.ResponseWriter, r *http.Request) {
@@ -18,16 +17,6 @@ func (d *dataBases) user(w http.ResponseWriter, r *http.Request) {
 
 		var userBeta User
 		var err error
-
-		idBeta := r.Header.Get("id")
-
-		userBeta.ID, err = strconv.Atoi(idBeta)
-
-		if err != nil {
-			errMensaje.Mensaje = http.StatusText(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(errMensaje)
-			return
-		}
 
 		userBeta.Username = r.Header.Get("username")
 		userBeta.Password = r.Header.Get("password")
@@ -142,16 +131,6 @@ func (d dataBases) myPosts(w http.ResponseWriter, r *http.Request) {
 
 		var userBeta User
 		var err error
-
-		idBeta := r.Header.Get("id")
-
-		userBeta.ID, err = strconv.Atoi(idBeta)
-
-		if err != nil {
-			errMensaje.Mensaje = http.StatusText(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(errMensaje)
-			return
-		}
 
 		userBeta.Username = r.Header.Get("username")
 		userBeta.Password = r.Header.Get("password")
@@ -297,16 +276,6 @@ func (d dataBases) friendsPosts(w http.ResponseWriter, r *http.Request) {
 		var userBeta User
 		var err error
 
-		idBeta := r.Header.Get("id")
-
-		userBeta.ID, err = strconv.Atoi(idBeta)
-
-		if err != nil {
-			errMensaje.Mensaje = http.StatusText(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(errMensaje)
-			return
-		}
-
 		userBeta.Username = r.Header.Get("username")
 		userBeta.Password = r.Header.Get("password")
 
@@ -355,15 +324,6 @@ func (d dataBases) friends(w http.ResponseWriter, r *http.Request) {
 
 		var userBeta User
 		var err error
-
-		idBeta := r.Header.Get("id")
-
-		userBeta.ID, err = strconv.Atoi(idBeta)
-
-		if err != nil {
-			errMensaje.Mensaje = http.StatusText(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(errMensaje)
-		}
 
 		userBeta.Username = r.Header.Get("username")
 		userBeta.Password = r.Header.Get("password")

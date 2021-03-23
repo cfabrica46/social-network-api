@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"strconv"
 	"time"
 )
 
@@ -27,7 +26,6 @@ func profileGET(u *User) (check bool, err error) {
 		return
 	}
 
-	req.Header.Set("id", strconv.Itoa(u.ID))
 	req.Header.Set("username", u.Username)
 	req.Header.Set("password", u.Password)
 
@@ -242,7 +240,6 @@ func getPosts(u User, stringURL string) (posts []Post, err error) {
 		return
 	}
 
-	req.Header.Set("id", strconv.Itoa(u.ID))
 	req.Header.Set("username", u.Username)
 	req.Header.Set("password", u.Password)
 
@@ -468,7 +465,6 @@ func getFriends(u User) (friends []User, err error) {
 		return
 	}
 
-	req.Header.Set("id", strconv.Itoa(u.ID))
 	req.Header.Set("username", u.Username)
 	req.Header.Set("password", u.Password)
 
